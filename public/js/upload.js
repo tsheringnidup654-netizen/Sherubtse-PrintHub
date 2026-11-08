@@ -6,6 +6,7 @@
   const input = document.getElementById('file-input');
   const maxBytes = Number(zone.dataset.maxBytes);
   const ALLOWED = ['pdf', 'doc', 'docx', 'ppt', 'pptx'];
+  const AUTO_PAGE_COUNT = ALLOWED;
   const $ = (id) => document.getElementById(id);
   let chosen = null;
 
@@ -34,7 +35,7 @@
     $('chosen').hidden = false;
     zone.hidden = true;
     $('page-count').value = '';
-    const autoPageCount = ['pdf', 'docx'].includes(ext);
+    const autoPageCount = AUTO_PAGE_COUNT.includes(ext);
     $('page-count').required = !autoPageCount;
     $('page-count').placeholder = autoPageCount ? 'Detected automatically' : 'Enter total pages';
     const frame = $('preview-frame');
@@ -58,7 +59,7 @@
     if (!chosen) return;
     const pageValue = $('page-count').value.trim();
     const ext = chosen.name.split('.').pop().toLowerCase();
-    const autoPageCount = ['pdf', 'docx'].includes(ext);
+    const autoPageCount = AUTO_PAGE_COUNT.includes(ext);
     if ((!autoPageCount || pageValue) && (!/^\d+$/.test(pageValue) || Number(pageValue) < 1 || Number(pageValue) > 5000)) {
       fail('Enter a page count between 1 and 5000.');
       $('page-count').focus();
@@ -78,7 +79,12 @@
     xhr.onload = () => {
       let d = {};
       try { d = JSON.parse(xhr.responseText); } catch (_) { /* ignore */ }
-      if (xhr.status === 200 && d.ok) { sessionStorage.setItem('ph-toast', 'Document uploaded successfully.'); window.location.reload(); }
+      if (xhr.status === 200 && d.ok) {
+        const pages = d.document.pages;
+        const pageMessage = pages ? ` Page count: ${pages}.` : '';
+        sessionStorage.setItem('ph-toast', 'Document uploaded successfully.' + pageMessage);
+        window.location.reload();
+      }
       else {
         fail(d.error || 'Upload failed. Please try again.');
         if (d.code === 'PAGE_COUNT_REQUIRED') {

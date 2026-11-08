@@ -3,43 +3,58 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const zlib = require('zlib');
-const { readWordDocumentProperties } = require('../utils/wordPageCount');
+const { PDFDocument } = require('pdf-lib');
+const { countPdfPages } = require('../utils/fileCheck');
+const { readWordDocumentProperties, readPowerPointDocumentProperties } = require('../utils/wordPageCount');
 
 function makeDocx(pages) {
-  const name = Buffer.from('docProps/app.xml');
-  const xml = Buffer.from(`<Properties><Pages>${pages}</Pages></Properties>`);
-  const compressed = zlib.deflateRawSync(xml);
-  const local = Buffer.alloc(30);
-  local.writeUInt32LE(0x04034b50, 0);
-  local.writeUInt16LE(20, 4);
-  local.writeUInt16LE(0x800, 6);
-  local.writeUInt16LE(8, 8);
-  local.writeUInt32LE(compressed.length, 18);
-  local.writeUInt32LE(xml.length, 22);
-  local.writeUInt16LE(name.length, 26);
-  const localEntry = Buffer.concat([local, name, compressed]);
-
-  const central = Buffer.alloc(46);
-  central.writeUInt32LE(0x02014b50, 0);
-  central.writeUInt16LE(20, 4);
-  central.writeUInt16LE(20, 6);
-  central.writeUInt16LE(0x800, 8);
-  central.writeUInt16LE(8, 10);
-  central.writeUInt32LE(compressed.length, 20);
-  central.writeUInt32LE(xml.length, 24);
-  central.writeUInt16LE(name.length, 28);
-  const centralEntry = Buffer.concat([central, name]);
-
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(1, 8);
-  end.writeUInt16LE(1, 10);
-  end.writeUInt32LE(centralEntry.length, 12);
-  end.writeUInt32LE(localEntry.length, 16);
-  return Buffer.concat([localEntry, centralEntry, end]);
+  return makeZip([['docProps/app.xml', `<Properties><Pages>${pages}</Pages></Properties>`]]);
 }
 
-function makeDoc(pages) {
+function makePptx(slides) {
+  return makeZip(Array.from({ length: slides }, (_, i) => [`ppt/slides/slide${i + 1}.xml`, '<slide/>']));
+}
+
+function makeZip(entries) {
+  const localEntries = [];
+  const centralEntries = [];
+  let localOffset = 0;
+  for (const [fileName, content] of entries) {
+    const name = Buffer.from(fileName);
+    const xml = Buffer.from(content);
+    const compressed = zlib.deflateRawSync(xml);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(8, 8);
+    local.writeUInt32LE(compressed.length, 18);
+    local.writeUInt32LE(xml.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    localEntries.push(Buffer.concat([local, name, compressed]));
+
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(8, 10);
+    central.writeUInt32LE(compressed.length, 20);
+    central.writeUInt32LE(xml.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    central.writeUInt32LE(localOffset, 42);
+    centralEntries.push(Buffer.concat([central, name]));
+    localOffset += localEntries[localEntries.length - 1].length;
+  }
+  const centralDirectory = Buffer.concat(centralEntries);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(localOffset, 16);
+  return Buffer.concat([...localEntries, centralDirectory, end]);
+}
+
+function makeOleDocument(pages, streamName, propertyId) {
   const file = Buffer.alloc(512 * 6);
   Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(file);
   file.writeUInt16LE(9, 30);
@@ -72,7 +87,7 @@ function makeDoc(pages) {
     file.writeBigUInt64LE(BigInt(size), directory + offset + 120);
   };
   writeEntry(0, 'Root Entry', 5, 3, 128);
-  writeEntry(128, '\u0005SummaryInformation', 2, 0, 72);
+  writeEntry(128, streamName, 2, 0, 72);
 
   const miniFat = sectorOffset(4);
   file.writeUInt32LE(1, miniFat);
@@ -83,7 +98,7 @@ function makeDoc(pages) {
   properties.writeUInt32LE(48, 44);
   properties.writeUInt32LE(24, 48);
   properties.writeUInt32LE(1, 52);
-  properties.writeUInt32LE(14, 56);
+  properties.writeUInt32LE(propertyId, 56);
   properties.writeUInt32LE(16, 60);
   properties.writeUInt32LE(3, 64);
   properties.writeUInt32LE(pages, 68);
@@ -91,14 +106,31 @@ function makeDoc(pages) {
   return file;
 }
 
-const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'printhub-word-pages-'));
-try {
-  for (const [extension, fixture] of [['docx', makeDocx(7)], ['doc', makeDoc(5)]]) {
+async function run() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'printhub-page-count-'));
+  try {
+  const samples = [
+    ['docx', makeDocx(7), readWordDocumentProperties, 7],
+    ['doc', makeOleDocument(5, '\u0005SummaryInformation', 14), readWordDocumentProperties, 5],
+    ['pptx', makePptx(4), readPowerPointDocumentProperties, 4],
+    ['ppt', makeOleDocument(6, '\u0005DocumentSummaryInformation', 7), readPowerPointDocumentProperties, 6],
+  ];
+  for (const [extension, fixture, readPageCount, expected] of samples) {
     const file = path.join(tempDir, `sample.${extension}`);
     fs.writeFileSync(file, fixture);
-    assert.strictEqual(readWordDocumentProperties(file), extension === 'docx' ? 7 : 5);
+    assert.strictEqual(readPageCount(file), expected, `${extension} page count`);
   }
-  console.log('Word page-count metadata tests passed.');
-} finally {
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  const pdf = path.join(tempDir, 'sample.pdf');
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.addPage();
+  pdfDoc.addPage();
+  pdfDoc.addPage();
+  fs.writeFileSync(pdf, await pdfDoc.save());
+  assert.strictEqual(await countPdfPages(pdf), 3, 'PDF page count');
+  console.log('PDF, Word and PowerPoint page-count tests passed.');
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 }
+
+run().catch((err) => { console.error(err); process.exitCode = 1; });

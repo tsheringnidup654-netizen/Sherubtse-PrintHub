@@ -3,6 +3,7 @@
  * (not just the extension / MIME type sent by the browser) and guesses PDF page counts.
  */
 const fs = require('fs');
+const { PDFDocument } = require('pdf-lib');
 
 const SIG = {
   pdf: Buffer.from('%PDF'),
@@ -34,14 +35,12 @@ function signatureMatches(file, ext) {
   }
 }
 
-/** Best-effort PDF page counter (returns null when it cannot tell). */
-function countPdfPages(file) {
+/** Returns the parsed PDF page count, or null when the PDF cannot be read safely. */
+async function countPdfPages(file) {
   try {
-    const txt = fs.readFileSync(file, 'latin1');
-    const counts = [...txt.matchAll(/\/Count\s+(\d+)/g)].map((m) => Number(m[1]));
-    if (counts.length) return Math.max(...counts);
-    const n = (txt.match(/\/Type\s*\/Page[^s]/g) || []).length;
-    return n || null;
+    const pdf = await PDFDocument.load(fs.readFileSync(file), { ignoreEncryption: true });
+    const pages = pdf.getPageCount();
+    return pages > 0 && pages <= 5000 ? pages : null;
   } catch (_) { return null; }
 }
 

@@ -1,6 +1,7 @@
 /**
  * Authentication & role-based authorisation middleware.
  */
+const crypto = require('crypto');
 const User = require('../models/User');
 const Cart = require('../models/Cart');
 const Notification = require('../models/Notification');
@@ -10,6 +11,7 @@ async function attachUser(req, res, next) {
   res.locals.user = null;
   res.locals.cartCount = 0;
   res.locals.unreadCount = 0;
+  if (req.path === '/') return next();
   if (!req.session.userId) return next();
   try {
     const user = await User.findById(req.session.userId);
@@ -26,6 +28,21 @@ async function attachUser(req, res, next) {
     res.locals.cartCount = cartCount;
     next();
   } catch (err) { next(err); }
+}
+
+function forceGuest(req, res, next) {
+  if (!req.session.userId) return next();
+
+  req.session.regenerate((err) => {
+    if (err) return next(err);
+    req.session.csrf = crypto.randomBytes(24).toString('hex');
+    req.user = null;
+    res.locals.user = null;
+    res.locals.cartCount = 0;
+    res.locals.unreadCount = 0;
+    res.locals.csrfToken = req.session.csrf;
+    next();
+  });
 }
 
 function requireLogin(req, res, next) {
@@ -49,4 +66,4 @@ const redirectIfAuth = (req, res, next) => {
   res.redirect(req.user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
 };
 
-module.exports = { attachUser, requireLogin, requireStudent: requireRole('student'), requireAdmin: requireRole('admin'), redirectIfAuth };
+module.exports = { attachUser, forceGuest, requireLogin, requireStudent: requireRole('student'), requireAdmin: requireRole('admin'), redirectIfAuth };

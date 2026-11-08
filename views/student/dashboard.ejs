@@ -62,7 +62,15 @@
       <% } else { notifications.forEach(function (n) { %>
         <div class="notif-item <%= n.is_read ? '' : 'unread' %>">
           <div class="icon-tile"><i class="bi <%= NOTIF_ICONS[n.type] || 'bi-bell' %>"></i></div>
-          <div class="min-w-0"><strong class="d-block small"><%= n.title %></strong><span class="small text-muted"><%= n.message %></span><div class="small text-muted"><%= fmtShort(n.created_at) %></div></div>
+          <div class="min-w-0 flex-grow-1"><strong class="d-block small"><%= n.title %></strong><span class="small text-muted"><%= n.message %></span><div class="small text-muted"><%= fmtShort(n.created_at) %></div>
+            <% if (!n.is_read) { %>
+              <form method="post" action="/student/notifications/<%= n.id %>/read" class="mt-1" data-no-loading>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="next" value="/student/dashboard">
+                <button class="btn btn-link btn-sm p-0 text-muted" type="submit">Mark as read</button>
+              </form>
+            <% } %>
+          </div>
         </div>
       <% }) } %>
     </div>

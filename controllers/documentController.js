@@ -5,7 +5,7 @@ const Document = require('../models/Document');
 const C = require('../config/constants');
 const { signatureMatches, countPdfPages } = require('../utils/fileCheck');
 const { toInt, decodeUploadFilename } = require('../utils/helpers');
-const { readWordDocumentProperties } = require('../utils/wordPageCount');
+const { readWordDocumentProperties, readPowerPointDocumentProperties } = require('../utils/wordPageCount');
 
 const diskPath = (doc) => path.join(C.DOC_DIR, String(doc.user_id), doc.stored_name);
 
@@ -31,18 +31,18 @@ exports.upload = async (req, res) => {
 
   const rawPageCount = String(req.body.page_count || '').trim();
   let pages = rawPageCount ? toInt(rawPageCount) : null;
-  if (!pages && ext === '.pdf') pages = countPdfPages(req.file.path);
+  if (!pages && ext === '.pdf') pages = await countPdfPages(req.file.path);
   if (!pages && (ext === '.doc' || ext === '.docx')) {
     pages = readWordDocumentProperties(req.file.path);
+  }
+  if (!pages && (ext === '.ppt' || ext === '.pptx')) {
+    pages = readPowerPointDocumentProperties(req.file.path);
   }
   if (rawPageCount && (!/^\d+$/.test(rawPageCount) || !pages || pages > 5000)) {
     return fail('Page count must be a whole number between 1 and 5000.');
   }
-  if ((ext === '.doc' || ext === '.docx') && !pages) {
-    return fail('Could not read the page count from this Word file. Enter the total pages and upload it again.', 422, 'PAGE_COUNT_REQUIRED');
-  }
-  if (ext !== '.pdf' && ext !== '.doc' && ext !== '.docx' && !pages) {
-    return fail('Please enter the total page count for this file.');
+  if (!pages) {
+    return fail('Could not detect the page count automatically. Enter the total pages and upload the file again.', 422, 'PAGE_COUNT_REQUIRED');
   }
   if (pages && pages > 5000) {
     return fail('Page count must be between 1 and 5000.');

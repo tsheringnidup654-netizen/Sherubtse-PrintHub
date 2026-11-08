@@ -18,7 +18,18 @@ function readWordDocumentProperties(filePath) {
   return null;
 }
 
-function readDocxProperties(file) {
+function readPowerPointDocumentProperties(filePath) {
+  const file = fs.readFileSync(filePath);
+  if (file.length >= 4 && file.readUInt32LE(0) === 0x04034b50) {
+    return readPptxSlideCount(file);
+  }
+  if (file.length >= 8 && file.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]))) {
+    return readDocProperties(file, '\u0005DocumentSummaryInformation', 7);
+  }
+  return null;
+}
+
+function readZipDirectory(file) {
   const minEndOffset = Math.max(0, file.length - 22 - 0xffff);
   let endOffset = -1;
   for (let i = file.length - 22; i >= minEndOffset; i -= 1) {
@@ -35,43 +46,69 @@ function readDocxProperties(file) {
   if (entryCount === 0xffff || centralOffset === 0xffffffff || centralSize === 0xffffffff) return null;
   if (centralOffset + centralSize > endOffset) return null;
 
+  const entries = [];
   let cursor = centralOffset;
   for (let i = 0; i < entryCount; i += 1) {
     if (cursor + 46 > centralOffset + centralSize || file.readUInt32LE(cursor) !== 0x02014b50) return null;
-    const flags = file.readUInt16LE(cursor + 8);
-    const method = file.readUInt16LE(cursor + 10);
-    const compressedSize = file.readUInt32LE(cursor + 20);
-    const uncompressedSize = file.readUInt32LE(cursor + 24);
     const nameLength = file.readUInt16LE(cursor + 28);
     const extraLength = file.readUInt16LE(cursor + 30);
     const commentLength = file.readUInt16LE(cursor + 32);
-    const localOffset = file.readUInt32LE(cursor + 42);
     const next = cursor + 46 + nameLength + extraLength + commentLength;
     if (next > centralOffset + centralSize) return null;
-    const name = file.toString('utf8', cursor + 46, cursor + 46 + nameLength);
+    entries.push({
+      name: file.toString('utf8', cursor + 46, cursor + 46 + nameLength),
+      flags: file.readUInt16LE(cursor + 8),
+      method: file.readUInt16LE(cursor + 10),
+      compressedSize: file.readUInt32LE(cursor + 20),
+      uncompressedSize: file.readUInt32LE(cursor + 24),
+      localOffset: file.readUInt32LE(cursor + 42),
+    });
     cursor = next;
-    if (name !== 'docProps/app.xml') continue;
-    if (flags & 1 || (method !== 0 && method !== 8)) return null;
-    if (uncompressedSize > MAX_APP_PROPERTIES_BYTES || compressedSize > file.length) return null;
-    if (localOffset + 30 > file.length || file.readUInt32LE(localOffset) !== 0x04034b50) return null;
-    const localNameLength = file.readUInt16LE(localOffset + 26);
-    const localExtraLength = file.readUInt16LE(localOffset + 28);
-    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
-    if (dataOffset + compressedSize > file.length) return null;
-
-    const compressed = file.subarray(dataOffset, dataOffset + compressedSize);
-    const xml = method === 0
-      ? compressed
-      : zlib.inflateRawSync(compressed, { maxOutputLength: MAX_APP_PROPERTIES_BYTES });
-    const match = xml.toString('utf8').match(/<(?:[\w.-]+:)?Pages>\s*(\d+)\s*<\/(?:[\w.-]+:)?Pages>/);
-    if (!match) return null;
-    const pages = Number(match[1]);
-    return Number.isInteger(pages) && pages > 0 && pages <= 5000 ? pages : null;
   }
-  return null;
+  return entries;
 }
 
-function readDocProperties(file) {
+function readZipEntry(file, entry) {
+  if (!entry || entry.flags & 1 || (entry.method !== 0 && entry.method !== 8)) return null;
+  if (entry.uncompressedSize > MAX_APP_PROPERTIES_BYTES || entry.compressedSize > file.length) return null;
+  if (entry.localOffset + 30 > file.length || file.readUInt32LE(entry.localOffset) !== 0x04034b50) return null;
+  const localNameLength = file.readUInt16LE(entry.localOffset + 26);
+  const localExtraLength = file.readUInt16LE(entry.localOffset + 28);
+  const dataOffset = entry.localOffset + 30 + localNameLength + localExtraLength;
+  if (dataOffset + entry.compressedSize > file.length) return null;
+  const compressed = file.subarray(dataOffset, dataOffset + entry.compressedSize);
+  let data;
+  try {
+    data = entry.method === 0
+      ? compressed
+      : zlib.inflateRawSync(compressed, { maxOutputLength: MAX_APP_PROPERTIES_BYTES });
+  } catch (err) {
+    if (err.code === 'ERR_BUFFER_TOO_LARGE' || err.code === 'Z_DATA_ERROR') return null;
+    throw err;
+  }
+  return data.length === entry.uncompressedSize ? data : null;
+}
+
+function readDocxProperties(file) {
+  const entries = readZipDirectory(file);
+  if (!entries) return null;
+  const app = entries.find((entry) => entry.name === 'docProps/app.xml');
+  const xml = readZipEntry(file, app);
+  if (!xml) return null;
+  const match = xml.toString('utf8').match(/<(?:[\w.-]+:)?Pages>\s*(\d+)\s*<\/(?:[\w.-]+:)?Pages>/);
+  if (!match) return null;
+  const pages = Number(match[1]);
+  return Number.isInteger(pages) && pages > 0 && pages <= 5000 ? pages : null;
+}
+
+function readPptxSlideCount(file) {
+  const entries = readZipDirectory(file);
+  if (!entries) return null;
+  const slides = entries.filter((entry) => /^ppt\/slides\/slide\d+\.xml$/i.test(entry.name)).length;
+  return slides > 0 && slides <= 5000 ? slides : null;
+}
+
+function readDocProperties(file, streamName = '\u0005SummaryInformation', propertyId = 14) {
   const sectorShift = file.readUInt16LE(30);
   const miniSectorShift = file.readUInt16LE(32);
   const sectorSize = 2 ** sectorShift;
@@ -142,7 +179,7 @@ function readDocProperties(file) {
       }
     }
   }
-  const summary = entries.find((entry) => entry.type === 2 && entry.name === '\u0005SummaryInformation');
+  const summary = entries.find((entry) => entry.type === 2 && entry.name === streamName);
   if (!summary) return null;
 
   let properties;
@@ -170,10 +207,10 @@ function readDocProperties(file) {
     if (parts.some((part) => !part)) return null;
     properties = Buffer.concat(parts).subarray(0, summary.size);
   }
-  return readSummaryPageCount(properties);
+  return readSummaryPageCount(properties, propertyId);
 }
 
-function readSummaryPageCount(properties) {
+function readSummaryPageCount(properties, targetPropertyId) {
   if (!properties || properties.length < 48 || properties.readUInt16LE(0) !== 0xfffe) return null;
   const sectionOffset = properties.readUInt32LE(44);
   if (sectionOffset + 8 > properties.length) return null;
@@ -185,7 +222,7 @@ function readSummaryPageCount(properties) {
     const propertyId = properties.readUInt32LE(entryOffset);
     const valueOffset = properties.readUInt32LE(entryOffset + 4);
     const value = sectionOffset + valueOffset;
-    if (propertyId !== 14) continue;
+    if (propertyId !== targetPropertyId) continue;
     if (value + 8 > sectionOffset + sectionSize) return null;
     const type = properties.readUInt32LE(value);
     if (type !== 3 && type !== 19) return null;
@@ -195,4 +232,4 @@ function readSummaryPageCount(properties) {
   return null;
 }
 
-module.exports = { readWordDocumentProperties };
+module.exports = { readWordDocumentProperties, readPowerPointDocumentProperties };
