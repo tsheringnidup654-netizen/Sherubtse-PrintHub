@@ -7,7 +7,6 @@ const Document = require('../models/Document');
 const Payment = require('../models/Payment');
 const Feedback = require('../models/Feedback');
 const Setting = require('../models/Setting');
-const Notification = require('../models/Notification');
 const C = require('../config/constants');
 const { send: sendDocument } = require('./documentController');
 const { sendInvoice } = require('./orderController');
@@ -20,7 +19,6 @@ const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 
 /* ------------------------------------------------------------ dashboard */
 exports.dashboard = async (req, res) => {
-  await Notification.scanDeadlines();
   const [stats, urgent, recent] = await Promise.all([
     Stats.adminDashboard(),
     Order.listAll({ deadline: 'urgent' }, 'deadline'),

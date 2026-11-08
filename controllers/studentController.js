@@ -12,7 +12,6 @@ const { clean, strongPassword, toInt } = require('../utils/helpers');
 const { signatureMatches } = require('../utils/fileCheck');
 
 exports.dashboard = async (req, res) => {
-  await Notification.scanDeadlines();
   const uid = req.user.id;
   const [orders, summary, notifications] = await Promise.all([Order.listForUser(uid), Stats.studentSummary(uid), Notification.list(uid, 5)]);
   const live = orders.filter((o) => C.ACTIVE_STATUSES.includes(o.status)).sort((a, b) => a.collection_deadline - b.collection_deadline);

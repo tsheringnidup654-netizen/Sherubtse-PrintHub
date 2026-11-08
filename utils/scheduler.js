@@ -6,8 +6,19 @@
 const Notification = require('../models/Notification');
 
 function start() {
-  const run = () => Notification.scanDeadlines().catch((e) => console.error('Deadline scan failed:', e.message));
-  run();
+  let running = false;
+  const run = async () => {
+    if (running) return;
+    running = true;
+    try {
+      await Notification.scanDeadlines();
+    } catch (e) {
+      console.error('Deadline scan failed:', e.message);
+    } finally {
+      running = false;
+    }
+  };
+  void run();
   return setInterval(run, 60 * 1000);
 }
 

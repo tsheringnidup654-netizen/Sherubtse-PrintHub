@@ -18,8 +18,12 @@ async function attachUser(req, res, next) {
     }
     req.user = user;
     res.locals.user = user;
-    res.locals.unreadCount = await Notification.unreadCount(user.id);
-    if (user.role === 'student') res.locals.cartCount = await Cart.count(user.id);
+    const [unreadCount, cartCount] = await Promise.all([
+      Notification.unreadCount(user.id),
+      user.role === 'student' ? Cart.count(user.id) : 0,
+    ]);
+    res.locals.unreadCount = unreadCount;
+    res.locals.cartCount = cartCount;
     next();
   } catch (err) { next(err); }
 }

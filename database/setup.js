@@ -40,6 +40,10 @@ async function ensureDatabase() {
 }
 
 async function run() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Refusing to run the destructive database setup in production.');
+  }
+
   await ensureDatabase();
   const client = new Client(DB);
   await client.connect();

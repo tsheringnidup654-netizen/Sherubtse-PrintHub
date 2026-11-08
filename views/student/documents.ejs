@@ -23,7 +23,7 @@
           <div class="min-w-0 flex-grow-1"><strong class="d-block text-truncate" id="file-name"></strong><small class="text-muted" id="file-size"></small></div>
           <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-choice" aria-label="Remove chosen file"><i class="bi bi-x-lg"></i></button>
         </div>
-        <label class="form-label" for="page-count">Number of pages <span class="text-muted fw-normal">(detected for PDFs - please check)</span></label>
+        <label class="form-label" for="page-count">Number of pages <span id="page-count-help" class="text-muted fw-normal">(detected automatically when available; check the count before ordering)</span></label>
         <input class="form-control mb-3" type="number" id="page-count" min="1" max="5000" placeholder="e.g. 12">
         <iframe id="preview-frame" class="preview-frame mb-3" title="Document preview" hidden></iframe>
         <div id="no-preview" class="alert alert-info small" hidden><i class="bi bi-info-circle me-1"></i>A preview is only available for PDF files. Word and PowerPoint files are checked and stored securely.</div>

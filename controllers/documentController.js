@@ -4,7 +4,8 @@ const path = require('path');
 const Document = require('../models/Document');
 const C = require('../config/constants');
 const { signatureMatches, countPdfPages } = require('../utils/fileCheck');
-const { toInt } = require('../utils/helpers');
+const { toInt, decodeUploadFilename } = require('../utils/helpers');
+const { readWordDocumentProperties } = require('../utils/wordPageCount');
 
 const diskPath = (doc) => path.join(C.DOC_DIR, String(doc.user_id), doc.stored_name);
 
@@ -17,9 +18,9 @@ exports.library = async (req, res) => {
 
 exports.upload = async (req, res) => {
   const wantsJson = (req.get('accept') || '').includes('application/json');
-  const fail = (msg, status = 400) => {
+  const fail = (msg, status = 400, code = undefined) => {
     if (req.file) fs.unlink(req.file.path, () => {});
-    if (wantsJson) return res.status(status).json({ ok: false, error: msg });
+    if (wantsJson) return res.status(status).json({ ok: false, error: msg, code });
     req.flash('danger', msg);
     return res.redirect('/student/documents');
   };
@@ -28,13 +29,30 @@ exports.upload = async (req, res) => {
   const ext = path.extname(req.file.originalname).toLowerCase();
   if (!signatureMatches(req.file.path, ext)) return fail('The file content does not match its type. Upload a genuine PDF, Word or PowerPoint file.');
 
-  let pages = toInt(req.body.page_count);
+  const rawPageCount = String(req.body.page_count || '').trim();
+  let pages = rawPageCount ? toInt(rawPageCount) : null;
   if (!pages && ext === '.pdf') pages = countPdfPages(req.file.path);
-  if (pages && (pages < 1 || pages > 5000)) pages = null;
+  if (!pages && (ext === '.doc' || ext === '.docx')) {
+    pages = readWordDocumentProperties(req.file.path);
+  }
+  if (rawPageCount && (!/^\d+$/.test(rawPageCount) || !pages || pages > 5000)) {
+    return fail('Page count must be a whole number between 1 and 5000.');
+  }
+  if ((ext === '.doc' || ext === '.docx') && !pages) {
+    return fail('Could not read the page count from this Word file. Enter the total pages and upload it again.', 422, 'PAGE_COUNT_REQUIRED');
+  }
+  if (ext !== '.pdf' && ext !== '.doc' && ext !== '.docx' && !pages) {
+    return fail('Please enter the total page count for this file.');
+  }
+  if (pages && pages > 5000) {
+    return fail('Page count must be between 1 and 5000.');
+  }
 
   const doc = await Document.create({
-    user_id: req.user.id, original_name: path.basename(req.file.originalname).slice(0, 255), stored_name: req.file.filename,
-    mime_type: req.file.mimetype, size_bytes: req.file.size, page_count: pages,
+    user_id: req.user.id,
+    original_name: path.basename(decodeUploadFilename(req.file.originalname).replace(/[\\/]/g, '/')).slice(0, 255),
+    stored_name: req.file.filename,
+    mime_type: req.file.mimetype, extension: ext, size_bytes: req.file.size, page_count: pages,
   });
   if (wantsJson) return res.json({ ok: true, document: { id: doc.id, name: doc.original_name, pages: doc.page_count } });
   req.flash('success', `"${doc.original_name}" uploaded.`);

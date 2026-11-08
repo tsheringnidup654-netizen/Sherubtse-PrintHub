@@ -17,17 +17,18 @@ const findById = async (id) => (await db.query(`${BASE} WHERE s.id = $1`, [id]))
 const findBySlug = async (slug) => (await db.query(`${BASE} WHERE s.slug = $1`, [slug])).rows[0];
 const categories = async () => (await db.query('SELECT * FROM categories ORDER BY sort_order')).rows;
 
-const COLS = ['category_id', 'name', 'slug', 'description', 'icon', 'pricing_type', 'base_price', 'colour_price', 'unit_label', 'options_text', 'sort_order'];
+const COLS = ['category_id', 'name', 'slug', 'description', 'icon', 'pricing_type', 'base_price', 'price', 'colour_price', 'unit_label', 'options_text', 'sort_order'];
+const values = (d) => COLS.map((c) => (c === 'price' ? d.base_price : d[c]));
 
 async function create(d) {
   const { rows } = await db.query(
     `INSERT INTO services (${COLS.join(',')}) VALUES (${COLS.map((_, i) => `$${i + 1}`).join(',')}) RETURNING id`,
-    COLS.map((c) => d[c]));
+    values(d));
   return rows[0].id;
 }
 
 async function update(id, d) {
-  await db.query(`UPDATE services SET ${COLS.map((c, i) => `${c}=$${i + 2}`).join(',')} WHERE id=$1`, [id, ...COLS.map((c) => d[c])]);
+  await db.query(`UPDATE services SET ${COLS.map((c, i) => `${c}=$${i + 2}`).join(',')} WHERE id=$1`, [id, ...values(d)]);
 }
 
 const setActive = (id, active) => db.query('UPDATE services SET is_active=$2 WHERE id=$1', [id, active]);

@@ -34,6 +34,9 @@
     $('chosen').hidden = false;
     zone.hidden = true;
     $('page-count').value = '';
+    const autoPageCount = ['pdf', 'docx'].includes(ext);
+    $('page-count').required = !autoPageCount;
+    $('page-count').placeholder = autoPageCount ? 'Detected automatically' : 'Enter total pages';
     const frame = $('preview-frame');
     if (ext === 'pdf') {
       frame.src = URL.createObjectURL(file);
@@ -53,9 +56,17 @@
 
   $('upload-btn').addEventListener('click', () => {
     if (!chosen) return;
+    const pageValue = $('page-count').value.trim();
+    const ext = chosen.name.split('.').pop().toLowerCase();
+    const autoPageCount = ['pdf', 'docx'].includes(ext);
+    if ((!autoPageCount || pageValue) && (!/^\d+$/.test(pageValue) || Number(pageValue) < 1 || Number(pageValue) > 5000)) {
+      fail('Enter a page count between 1 and 5000.');
+      $('page-count').focus();
+      return;
+    }
     const fd = new FormData();
     fd.append('document', chosen);
-    if ($('page-count').value) fd.append('page_count', $('page-count').value);
+    if (pageValue) fd.append('page_count', pageValue);
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/student/documents');
     xhr.setRequestHeader('x-csrf-token', window.PrintHub.csrf);
@@ -68,7 +79,18 @@
       let d = {};
       try { d = JSON.parse(xhr.responseText); } catch (_) { /* ignore */ }
       if (xhr.status === 200 && d.ok) { sessionStorage.setItem('ph-toast', 'Document uploaded successfully.'); window.location.reload(); }
-      else { fail(d.error || 'Upload failed. Please try again.'); $('upload-btn').disabled = false; bar.parentElement.hidden = true; bar.style.width = '0'; }
+      else {
+        fail(d.error || 'Upload failed. Please try again.');
+        if (d.code === 'PAGE_COUNT_REQUIRED') {
+          $('page-count').required = true;
+          $('page-count').placeholder = 'Enter total pages';
+          $('page-count-help').textContent = '(could not be read automatically; please enter the page count)';
+          $('page-count').focus();
+        }
+        $('upload-btn').disabled = false;
+        bar.parentElement.hidden = true;
+        bar.style.width = '0';
+      }
     };
     xhr.onerror = () => { fail('Network error during upload.'); $('upload-btn').disabled = false; };
     xhr.send(fd);

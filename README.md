@@ -18,7 +18,9 @@ npm run db:setup              # creates role/database, schema and sample data
 npm start                     # http://localhost:3000
 ```
 
-`npm run db:setup` is safe to re-run: it resets the data to the sample set.
+`npm run db:setup` is for local development only. It drops and recreates the
+PrintHub tables and resets all data to the sample set; never run it against a
+production or Render database.
 If the `printhub` role / database do not exist yet, set `PG_ADMIN_USER` / `PG_ADMIN_PASSWORD`
 in `.env` to a PostgreSQL superuser so the script can create them.
 

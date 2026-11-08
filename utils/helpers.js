@@ -1,10 +1,22 @@
 /** Small shared helpers: validation, option sanitising, view formatters. */
 const C = require('../config/constants');
 const T = require('./time');
+const { TextDecoder } = require('util');
 
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s || '');
 const clean = (s, max = 255) => String(s == null ? '' : s).trim().slice(0, max);
 const toInt = (v, def = null) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : def; };
+
+function decodeUploadFilename(filename) {
+  const name = String(filename || '');
+  if (!name || /[^\u0000-\u00ff]/.test(name)) return name;
+
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(name, 'latin1'));
+  } catch {
+    return name;
+  }
+}
 
 function strongPassword(pw) {
   return typeof pw === 'string' && pw.length >= 8 && /[A-Za-z]/.test(pw) && /\d/.test(pw);
@@ -71,4 +83,4 @@ const viewHelpers = {
   STATUS_LABELS: C.STATUS_LABELS, ACTIVE_STATUSES: C.ACTIVE_STATUSES,
 };
 
-module.exports = { isEmail, clean, toInt, strongPassword, parseItemOptions, optionSummary, money, viewHelpers };
+module.exports = { isEmail, clean, toInt, strongPassword, parseItemOptions, optionSummary, money, decodeUploadFilename, viewHelpers };

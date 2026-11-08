@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS categories           CASCADE;
 DROP TABLE IF EXISTS settings             CASCADE;
 DROP TABLE IF EXISTS users                CASCADE;
 DROP TABLE IF EXISTS "session"            CASCADE;
-DROP SEQUENCE IF EXISTS order_number_seq;
+DROP SEQUENCE IF EXISTS order_no_seq;
 
 -- ---------- USERS ----------------------------------------------------------
 CREATE TABLE users (
@@ -58,12 +58,17 @@ CREATE TABLE services (
     -- per_set        : price per bound document (binding)
     pricing_type  VARCHAR(15)  NOT NULL DEFAULT 'print' CHECK (pricing_type IN ('print', 'per_page_flat', 'per_set')),
     base_price    NUMERIC(10,2) NOT NULL CHECK (base_price >= 0),     -- black & white / standard price
+    price         NUMERIC(10,2) NOT NULL CHECK (price >= 0),
     colour_price  NUMERIC(10,2) CHECK (colour_price >= 0),            -- NULL = colour not offered
     unit_label    VARCHAR(30)  NOT NULL DEFAULT 'per page',
+    colour_mode   VARCHAR(10) NOT NULL DEFAULT 'choice',
+    uses_print_options BOOLEAN NOT NULL DEFAULT TRUE,
+    requires_document BOOLEAN NOT NULL DEFAULT TRUE,
     options_text  VARCHAR(255),
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order    INTEGER NOT NULL DEFAULT 0,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ---------- DOCUMENTS (private uploads) ------------------------------------
@@ -73,9 +78,10 @@ CREATE TABLE documents (
     original_name  VARCHAR(255) NOT NULL,
     stored_name    VARCHAR(255) NOT NULL UNIQUE,          -- random name on disk
     mime_type      VARCHAR(120) NOT NULL,
-    size_bytes     BIGINT NOT NULL CHECK (size_bytes > 0),
+    extension      VARCHAR(10) NOT NULL,
+    file_size      INTEGER NOT NULL CHECK (file_size > 0),
     page_count     INTEGER CHECK (page_count > 0),
-    uploaded_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ---------- CART -----------------------------------------------------------
@@ -93,29 +99,33 @@ CREATE TABLE cart_items (
     quality      VARCHAR(6)  NOT NULL DEFAULT 'normal'   CHECK (quality IN ('normal','high')),
     binding      VARCHAR(7)  NOT NULL DEFAULT 'none'     CHECK (binding IN ('none','spiral','project')),
     instructions TEXT,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ---------- ORDERS ---------------------------------------------------------
-CREATE SEQUENCE order_number_seq START 1;
+CREATE SEQUENCE order_no_seq START 1;
 
 CREATE TABLE orders (
     id                    SERIAL PRIMARY KEY,
-    order_number          VARCHAR(20) NOT NULL UNIQUE,              -- e.g. SH2026001
+    order_no              VARCHAR(20) NOT NULL UNIQUE,              -- e.g. SH2026001
     user_id               INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     status                VARCHAR(12) NOT NULL DEFAULT 'pending'
                           CHECK (status IN ('pending','accepted','printing','ready','collected','rejected','cancelled')),
     is_urgent             BOOLEAN NOT NULL DEFAULT FALSE,
     urgent_status         VARCHAR(10) NOT NULL DEFAULT 'none' CHECK (urgent_status IN ('none','requested','approved','rejected')),
     subtotal              NUMERIC(10,2) NOT NULL CHECK (subtotal >= 0),
-    urgent_fee            NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (urgent_fee >= 0),
+    urgent_surcharge      NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (urgent_surcharge >= 0),
     total                 NUMERIC(10,2) NOT NULL CHECK (total >= 0),
-    collection_deadline   TIMESTAMPTZ NOT NULL,   -- requested by the student: the countdown target
+    requested_deadline    TIMESTAMPTZ NOT NULL,   -- requested by the student: the countdown target
     estimated_completion  TIMESTAMPTZ,            -- set ONLY by an administrator
     is_delayed            BOOLEAN NOT NULL DEFAULT FALSE,
-    delay_note            TEXT,
+    delay_reason          TEXT,
     notes                 TEXT,
+    payment_method        VARCHAR(40) NOT NULL,
     qr_token              VARCHAR(64) NOT NULL UNIQUE,
+    notified_24h          BOOLEAN NOT NULL DEFAULT FALSE,
+    notified_3h           BOOLEAN NOT NULL DEFAULT FALSE,
     created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -126,15 +136,19 @@ CREATE TABLE order_items (
     service_id    INTEGER NOT NULL REFERENCES services(id) ON DELETE RESTRICT,
     document_id   INTEGER REFERENCES documents(id) ON DELETE SET NULL,
     service_name  VARCHAR(100) NOT NULL,                      -- snapshot at order time
+    document_name VARCHAR(255),
     pages         INTEGER NOT NULL CHECK (pages BETWEEN 1 AND 5000),
     copies        INTEGER NOT NULL CHECK (copies BETWEEN 1 AND 1000),
     paper_size    VARCHAR(2)  NOT NULL DEFAULT 'A4'       CHECK (paper_size IN ('A4','A3')),
     colour_mode   VARCHAR(6)  NOT NULL DEFAULT 'bw'       CHECK (colour_mode IN ('bw','colour')),
-    sided         VARCHAR(6)  NOT NULL DEFAULT 'single'   CHECK (sided IN ('single','double')),
+    sides         VARCHAR(10) NOT NULL DEFAULT 'single'   CHECK (sides IN ('single','double')),
     orientation   VARCHAR(9)  NOT NULL DEFAULT 'portrait' CHECK (orientation IN ('portrait','landscape')),
     quality       VARCHAR(6)  NOT NULL DEFAULT 'normal'   CHECK (quality IN ('normal','high')),
-    binding       VARCHAR(7)  NOT NULL DEFAULT 'none'     CHECK (binding IN ('none','spiral','project')),
+    binding_service_id INTEGER REFERENCES services(id) ON DELETE SET NULL,
+    binding_name  VARCHAR(100),
     instructions  TEXT,
+    unit_price    NUMERIC(10,2) NOT NULL CHECK (unit_price >= 0),
+    binding_cost  NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (binding_cost >= 0),
     line_total    NUMERIC(10,2) NOT NULL CHECK (line_total >= 0)
 );
 
@@ -147,6 +161,7 @@ CREATE TABLE payments (
     status      VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','failed','refunded')),
     reference   VARCHAR(80),
     paid_at     TIMESTAMPTZ,
+    verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -190,8 +205,8 @@ CREATE TABLE order_status_history (
 CREATE TABLE collection_records (
     id            SERIAL PRIMARY KEY,
     order_id      INTEGER NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
-    handed_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,   -- admin who handed over
-    verified_via  VARCHAR(10) NOT NULL DEFAULT 'qr' CHECK (verified_via IN ('qr','manual')),
+    collected_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,   -- admin who handed over
+    method        VARCHAR(10) NOT NULL DEFAULT 'qr' CHECK (method IN ('qr','manual')),
     note          TEXT,
     collected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -225,7 +240,7 @@ CREATE INDEX idx_cart_user       ON cart_items (user_id);
 CREATE INDEX idx_documents_user  ON documents (user_id);
 CREATE INDEX idx_orders_user     ON orders (user_id);
 CREATE INDEX idx_orders_status   ON orders (status);
-CREATE INDEX idx_orders_deadline ON orders (collection_deadline);
+CREATE INDEX idx_orders_deadline ON orders (requested_deadline);
 CREATE INDEX idx_items_order     ON order_items (order_id);
 CREATE INDEX idx_history_order   ON order_status_history (order_id);
 CREATE INDEX idx_notif_user      ON notifications (user_id, is_read);
