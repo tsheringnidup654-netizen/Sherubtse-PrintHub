@@ -1,0 +1,47 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>My orders</h2><p>Search and filter your order history.</p></div>
+  <a href="/student/customize" class="btn btn-navy"><i class="bi bi-plus-circle me-1"></i>New print order</a></div>
+
+<form class="filter-bar" method="get" action="/student/orders" data-no-loading>
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small" for="q">Search</label><input class="form-control" id="q" name="q" value="<%= f.q %>" placeholder="Order number"></div>
+    <div class="col-6 col-md-2"><label class="form-label small" for="status">Status</label>
+      <select class="form-select" id="status" name="status"><option value="">All</option><% Object.keys(STATUS_LABELS).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= STATUS_LABELS[k] %></option><% }) %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label small" for="service">Service</label>
+      <select class="form-select" id="service" name="service"><option value="">All</option><% services.forEach(function (s) { %><option value="<%= s.id %>" <%= String(f.service) === String(s.id) ? 'selected' : '' %>><%= s.name %></option><% }) %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label small" for="deadline">Deadline</label>
+      <select class="form-select" id="deadline" name="deadline"><option value="">Any</option>
+        <% [['upcoming', 'Upcoming'], ['today', 'Due today'], ['urgent', 'Under 3 hours'], ['overdue', 'Past deadline']].forEach(function (d) { %><option value="<%= d[0] %>" <%= f.deadline === d[0] ? 'selected' : '' %>><%= d[1] %></option><% }) %></select></div>
+    <div class="col-6 col-md-1"><label class="form-label small" for="from">From</label><input class="form-control" type="date" id="from" name="from" value="<%= f.from %>"></div>
+    <div class="col-6 col-md-1"><label class="form-label small" for="to">To</label><input class="form-control" type="date" id="to" name="to" value="<%= f.to %>"></div>
+    <div class="col-6 col-md-1 d-flex gap-1"><button class="btn btn-navy flex-grow-1" type="submit" title="Apply filters"><i class="bi bi-funnel"></i></button><a class="btn btn-outline-secondary" href="/student/orders" title="Clear"><i class="bi bi-x-lg"></i></a></div>
+  </div>
+</form>
+
+<div class="ph-card">
+  <% if (!orders.length) { %>
+    <%- include('../partials/empty', { icon: 'bi-inbox', heading: 'No orders found', text: 'Try changing your filters, or place a new order.', href: '/services', cta: 'Browse services' }) %>
+  <% } else { %>
+  <div class="table-responsive">
+    <table class="table ph-table">
+      <thead><tr><th>Order</th><th>Services</th><th>Collection deadline</th><th>Time left</th><th>Status</th><th>Payment</th><th class="text-end">Total</th></tr></thead>
+      <tbody>
+      <% orders.forEach(function (o) { %>
+        <tr>
+          <td><a class="fw-bold" href="/student/orders/<%= o.id %>"><%= o.order_number %></a>
+            <% if (o.is_urgent) { %><span class="tag-urgent ms-1">Urgent</span><% } %>
+            <div class="small text-muted"><%= fmtDate(o.created_at) %></div></td>
+          <td class="small"><%= o.services %><div class="text-muted"><%= o.total_pages %> pages total</div></td>
+          <td class="small"><%= fmtFull(o.collection_deadline) %></td>
+          <td><%- include('../partials/cd-inline', { o: o }) %></td>
+          <td><%- include('../partials/status', { s: o.status }) %></td>
+          <td><span class="st st-<%= o.payment_status %>"><%= o.payment_status %></span></td>
+          <td class="text-end fw-bold"><%= money(o.total) %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

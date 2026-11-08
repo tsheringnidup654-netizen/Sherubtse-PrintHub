@@ -1,0 +1,71 @@
+<%- include('../partials/head') %>
+<div class="dash-title">
+  <div><h2>Welcome back, <%= user.full_name.split(' ')[0] %> 👋</h2><p>Here is what is happening with your print orders.</p></div>
+  <a href="/student/customize" class="btn btn-navy"><i class="bi bi-plus-circle me-1"></i>New print order</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-hourglass-split"></i></div><div><div class="num"><%= counts.active %></div><div class="lbl">Active orders</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-box-seam"></i></div><div><div class="num"><%= counts.ready %></div><div class="lbl">Ready to collect</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-bag-check"></i></div><div><div class="num"><%= summary.orders %></div><div class="lbl">Total orders</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-wallet2"></i></div><div><div class="num"><%= money(summary.spent) %></div><div class="lbl">Total spent</div></div></div></div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0"><i class="bi bi-alarm me-2"></i>Collection countdowns</h5><a href="/student/orders" class="small fw-bold">All orders →</a></div>
+<% if (!live.length) { %>
+  <div class="ph-card mb-4"><%- include('../partials/empty', { icon: 'bi-printer', heading: 'No active orders', text: 'Place an order and your live countdown will appear here.', href: '/student/customize', cta: 'Start printing' }) %></div>
+<% } else { %>
+  <div class="row g-3 mb-4">
+    <% live.forEach(function (o) { %>
+      <div class="col-lg-6">
+        <%- include('../partials/countdown', { o: o }) %>
+        <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+          <span><%- include('../partials/status', { s: o.status }) %> <% if (o.is_urgent) { %><span class="tag-urgent"><i class="bi bi-lightning-charge-fill"></i> Urgent</span><% } %> <% if (o.is_delayed) { %><span class="tag-delay">Delayed</span><% } %></span>
+          <a href="/student/orders/<%= o.id %>" class="small fw-bold">Track order →</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>Recent orders</h6><a href="/student/orders" class="small fw-bold">View all</a></div>
+      <% if (!recent.length) { %>
+        <%- include('../partials/empty', { icon: 'bi-inbox', heading: 'No orders yet', text: 'Your orders will be listed here.', href: '/services', cta: 'Browse services' }) %>
+      <% } else { %>
+      <div class="table-responsive">
+        <table class="table ph-table">
+          <thead><tr><th>Order</th><th>Services</th><th>Status</th><th>Time left</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+          <% recent.forEach(function (o) { %>
+            <tr>
+              <td><a class="fw-bold" href="/student/orders/<%= o.id %>"><%= o.order_number %></a><div class="small text-muted"><%= fmtDate(o.created_at) %></div></td>
+              <td class="small"><%= o.services %></td>
+              <td><%- include('../partials/status', { s: o.status }) %></td>
+              <td><%- include('../partials/cd-inline', { o: o }) %></td>
+              <td class="text-end fw-bold"><%= money(o.total) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>Latest notifications</h6><a href="/student/notifications" class="small fw-bold">View all</a></div>
+      <% if (!notifications.length) { %>
+        <div class="p-4 text-center text-muted small">You are all caught up.</div>
+      <% } else { notifications.forEach(function (n) { %>
+        <div class="notif-item <%= n.is_read ? '' : 'unread' %>">
+          <div class="icon-tile"><i class="bi <%= NOTIF_ICONS[n.type] || 'bi-bell' %>"></i></div>
+          <div class="min-w-0"><strong class="d-block small"><%= n.title %></strong><span class="small text-muted"><%= n.message %></span><div class="small text-muted"><%= fmtShort(n.created_at) %></div></div>
+        </div>
+      <% }) } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

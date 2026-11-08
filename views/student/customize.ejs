@@ -1,0 +1,55 @@
+<%- include('../partials/head') %>
+<%
+  const footer =
+    '<button type="submit" form="calc-form" class="btn btn-navy w-100 mt-3"><i class="bi bi-cart-plus me-1"></i>' + (editing ? 'Update cart item' : 'Add to cart') + '</button>' +
+    '<a href="/student/cart" class="btn btn-outline-navy w-100 mt-2">View cart</a>';
+%>
+<div class="dash-title"><div><h2><%= editing ? 'Edit cart item' : 'Printing customization' %></h2><p>Choose your document and options. The price updates as you go.</p></div>
+  <a href="/student/documents" class="btn btn-outline-navy"><i class="bi bi-cloud-arrow-up me-1"></i>Upload a new document</a></div>
+
+<form id="calc-form" method="post" action="/student/cart" data-reload-on-service="<%= editing ? '' : '/student/customize' %>" autocomplete="off">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% if (editing) { %><input type="hidden" name="edit_id" value="<%= editing.id %>"><% } %>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="ph-card card-pad mb-4">
+        <h6 class="mb-3"><i class="bi bi-1-circle me-2"></i>Service &amp; document</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="service_id">Service</label>
+            <select class="form-select" id="service_id" name="service_id" <%= editing ? 'data-locked' : '' %>>
+              <% services.forEach(function (s) { %>
+                <option value="<%= s.id %>" data-slug="<%= s.slug %>" <%= s.id === service.id ? 'selected' : '' %>><%= s.name %> — <%= money(s.base_price) %> <%= s.unit_label %></option>
+              <% }) %>
+            </select>
+            <div class="form-text"><%= service.description %></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="document_id">Document</label>
+            <select class="form-select" id="document_id" name="document_id">
+              <option value="">No file - I will bring my originals</option>
+              <% documents.forEach(function (d) { %>
+                <option value="<%= d.id %>" data-pages="<%= d.page_count || '' %>" <%= Number(item.document_id) === d.id ? 'selected' : '' %>><%= d.original_name %><%= d.page_count ? ' (' + d.page_count + ' pages)' : '' %></option>
+              <% }) %>
+            </select>
+            <div class="form-text"><% if (!documents.length) { %>You have no uploaded files yet. <a href="/student/documents">Upload one</a>.<% } else { %>Selecting a file fills in its page count.<% } %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ph-card card-pad mb-4">
+        <h6 class="mb-3"><i class="bi bi-2-circle me-2"></i>Print options</h6>
+        <%- include('../partials/print-options', { item: item, service: service }) %>
+      </div>
+
+      <div class="ph-card card-pad">
+        <h6 class="mb-3"><i class="bi bi-3-circle me-2"></i>Additional instructions</h6>
+        <textarea class="form-control" name="instructions" rows="3" maxlength="500" placeholder="e.g. Staple top-left corner, print pages 3-10 only"><%= item.instructions || '' %></textarea>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <%- include('../partials/price-panel', { panelFooter: footer }) %>
+    </div>
+  </div>
+</form>
+<%- include('../partials/foot') %>

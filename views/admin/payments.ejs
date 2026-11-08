@@ -1,0 +1,62 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Manage payments</h2><p>Verify online payments and configure the methods students can choose at checkout.</p></div></div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-cash-coin"></i></div><div><div class="num"><%= money(totals.paid) %></div><div class="lbl">Paid</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-hourglass-split"></i></div><div><div class="num"><%= money(totals.pending) %></div><div class="lbl">Pending</div></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      <% [['', 'All'], ['pending', 'Pending'], ['paid', 'Paid'], ['failed', 'Failed'], ['refunded', 'Refunded']].forEach(function (s) { %>
+        <a class="cat-pill <%= status === s[0] ? 'active' : '' %>" href="/admin/payments<%= s[0] ? '?status=' + s[0] : '' %>"><%= s[1] %></a><% }) %>
+    </div>
+    <div class="ph-card">
+      <% if (!payments.length) { %><%- include('../partials/empty', { icon: 'bi-credit-card', heading: 'No payments', text: 'No payments match this filter.' }) %>
+      <% } else { %>
+      <div class="table-responsive"><table class="table ph-table align-middle">
+        <thead><tr><th>Order</th><th>Student</th><th>Method</th><th>Amount</th><th>Status</th><th>Update</th></tr></thead>
+        <tbody>
+        <% payments.forEach(function (p) { %>
+          <tr>
+            <td><a class="fw-bold" href="/admin/orders/<%= p.order_id %>"><%= p.order_number %></a><div class="small text-muted"><%= STATUS_LABELS[p.order_status] %></div></td>
+            <td class="small"><%= p.full_name %></td>
+            <td class="small text-capitalize"><%= p.method %><% if (p.reference) { %><div class="text-muted">Ref: <%= p.reference %></div><% } %></td>
+            <td class="fw-bold"><%= money(p.amount) %></td>
+            <td><span class="st st-<%= p.status %>"><%= p.status %></span><% if (p.paid_at) { %><div class="small text-muted"><%= fmtShort(p.paid_at) %></div><% } %></td>
+            <td>
+              <form method="post" action="/admin/payments/<%= p.id %>" class="d-flex gap-1" data-no-loading>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <select class="form-select form-select-sm" name="status" aria-label="Payment status" style="min-width:104px">
+                  <% ['pending', 'paid', 'failed', 'refunded'].forEach(function (s) { %><option value="<%= s %>" <%= p.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option><% }) %>
+                </select>
+                <button class="btn btn-sm btn-navy" type="submit" title="Save"><i class="bi bi-check2"></i></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>Payment methods</h6></div>
+      <form class="card-pad" method="post" action="/admin/payments/methods" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <% methods.forEach(function (m) { %>
+          <div class="mb-3">
+            <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" role="switch" id="en-<%= m.code %>" name="enabled_<%= m.code %>" <%= m.enabled ? 'checked' : '' %>><label class="form-check-label fw-semibold" for="en-<%= m.code %>">Enabled</label></div>
+            <input class="form-control form-control-sm" name="label_<%= m.code %>" value="<%= m.label %>" maxlength="60" aria-label="Label for <%= m.code %>">
+            <div class="form-text"><%= m.needs_reference ? 'Student enters a transaction reference; you verify it here.' : 'No online transaction - paid when the order is handed over.' %></div>
+          </div>
+        <% }) %>
+        <button class="btn btn-navy w-100" type="submit">Save methods</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

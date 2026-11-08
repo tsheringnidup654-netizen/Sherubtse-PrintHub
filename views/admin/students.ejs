@@ -1,0 +1,33 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Manage students</h2><p><%= students.length %> registered student account<%= students.length === 1 ? '' : 's' %>.</p></div></div>
+<form class="filter-bar" method="get" action="/admin/students" data-no-loading>
+  <div class="row g-2"><div class="col-md-6"><input class="form-control" type="search" name="q" value="<%= q %>" placeholder="Search by name, e-mail or student ID" aria-label="Search students"></div>
+    <div class="col-auto"><button class="btn btn-navy" type="submit"><i class="bi bi-search me-1"></i>Search</button> <a class="btn btn-outline-secondary" href="/admin/students">Reset</a></div></div>
+</form>
+<div class="ph-card">
+  <% if (!students.length) { %><%- include('../partials/empty', { icon: 'bi-people', heading: 'No students found', text: 'Try a different search.' }) %>
+  <% } else { %>
+  <div class="table-responsive"><table class="table ph-table">
+    <thead><tr><th>Student</th><th>Contact</th><th>Programme</th><th>Orders</th><th>Spent</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    <% students.forEach(function (s) { %>
+      <tr>
+        <td><div class="d-flex align-items-center gap-2"><span class="avatar"><%= s.full_name.trim().charAt(0).toUpperCase() %></span><div><strong><%= s.full_name %></strong><div class="small text-muted"><%= s.student_id || 'No student ID' %></div></div></div></td>
+        <td class="small"><%= s.email %><br><span class="text-muted"><%= s.phone || '' %></span></td>
+        <td class="small"><%= s.programme || '—' %></td>
+        <td><%= s.orders %></td><td class="fw-bold"><%= money(s.spent) %></td>
+        <td class="small"><%= fmtDate(s.created_at) %></td>
+        <td><span class="st <%= s.is_active ? 'st-collected' : 'st-rejected' %>"><%= s.is_active ? 'Active' : 'Deactivated' %></span></td>
+        <td class="text-end">
+          <form method="post" action="/admin/students/<%= s.id %>/toggle" data-confirm="<%= s.is_active ? 'Deactivate this account? The student will not be able to log in.' : 'Re-activate this account?' %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="active" value="<%= s.is_active ? 'false' : 'true' %>">
+            <button class="btn btn-sm <%= s.is_active ? 'btn-outline-danger' : 'btn-outline-navy' %>" type="submit"><%= s.is_active ? 'Deactivate' : 'Activate' %></button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

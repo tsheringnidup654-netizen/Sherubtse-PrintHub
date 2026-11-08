@@ -1,0 +1,59 @@
+<%#
+  Shared option controls for the customise page and the public calculator.
+  Expects: item (current values) and service (selected service row).
+%>
+<% const isPrint = service.pricing_type === 'print'; const canColour = service.colour_price != null; %>
+<div class="row g-3">
+  <div class="col-6">
+    <label class="form-label" for="pages">Number of pages <% if (service.pricing_type === 'per_set') { %><span class="text-muted fw-normal">(optional)</span><% } %></label>
+    <input class="form-control" type="number" min="1" max="5000" id="pages" name="pages" value="<%= item.pages %>" required>
+  </div>
+  <div class="col-6">
+    <label class="form-label" for="copies">Number of copies</label>
+    <input class="form-control" type="number" min="1" max="1000" id="copies" name="copies" value="<%= item.copies %>" required>
+  </div>
+
+  <div class="col-12 col-md-6">
+    <span class="form-label d-block">Paper size</span>
+    <div class="opt-group">
+      <input type="radio" name="paper_size" id="ps-a4" value="A4" <%= item.paper_size !== 'A3' ? 'checked' : '' %>><label for="ps-a4">A4</label>
+      <input type="radio" name="paper_size" id="ps-a3" value="A3" <%= item.paper_size === 'A3' ? 'checked' : '' %>><label for="ps-a3">A3</label>
+    </div>
+  </div>
+  <div class="col-12 col-md-6" data-print-only <%= isPrint ? '' : 'hidden' %>>
+    <span class="form-label d-block">Colour</span>
+    <div class="opt-group">
+      <input type="radio" name="colour_mode" id="cm-bw" value="bw" <%= item.colour_mode !== 'colour' ? 'checked' : '' %>><label for="cm-bw"><i class="bi bi-circle-half"></i> Black &amp; white</label>
+      <input type="radio" name="colour_mode" id="cm-col" value="colour" <%= item.colour_mode === 'colour' ? 'checked' : '' %> <%= canColour ? '' : 'disabled' %>><label for="cm-col"><i class="bi bi-palette"></i> Colour</label>
+    </div>
+  </div>
+  <div class="col-12 col-md-6" data-print-only <%= isPrint ? '' : 'hidden' %>>
+    <span class="form-label d-block">Sides</span>
+    <div class="opt-group">
+      <input type="radio" name="sided" id="sd-1" value="single" <%= item.sided !== 'double' ? 'checked' : '' %>><label for="sd-1">Single-sided</label>
+      <input type="radio" name="sided" id="sd-2" value="double" <%= item.sided === 'double' ? 'checked' : '' %>><label for="sd-2">Double-sided</label>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <span class="form-label d-block">Orientation</span>
+    <div class="opt-group">
+      <input type="radio" name="orientation" id="or-p" value="portrait" <%= item.orientation !== 'landscape' ? 'checked' : '' %>><label for="or-p"><i class="bi bi-phone"></i> Portrait</label>
+      <input type="radio" name="orientation" id="or-l" value="landscape" <%= item.orientation === 'landscape' ? 'checked' : '' %>><label for="or-l"><i class="bi bi-phone-landscape"></i> Landscape</label>
+    </div>
+  </div>
+  <div class="col-12 col-md-6" data-print-only <%= isPrint ? '' : 'hidden' %>>
+    <span class="form-label d-block">Print quality</span>
+    <div class="opt-group">
+      <input type="radio" name="quality" id="q-n" value="normal" <%= item.quality !== 'high' ? 'checked' : '' %>><label for="q-n">Normal</label>
+      <input type="radio" name="quality" id="q-h" value="high" <%= item.quality === 'high' ? 'checked' : '' %>><label for="q-h"><i class="bi bi-stars"></i> High quality</label>
+    </div>
+  </div>
+  <div class="col-12 col-md-6" data-print-only <%= isPrint ? '' : 'hidden' %>>
+    <span class="form-label d-block">Binding</span>
+    <div class="opt-group">
+      <input type="radio" name="binding" id="b-0" value="none" <%= item.binding === 'none' || !item.binding ? 'checked' : '' %>><label for="b-0">None</label>
+      <input type="radio" name="binding" id="b-s" value="spiral" <%= item.binding === 'spiral' ? 'checked' : '' %>><label for="b-s">Spiral</label>
+      <input type="radio" name="binding" id="b-p" value="project" <%= item.binding === 'project' ? 'checked' : '' %>><label for="b-p">Project</label>
+    </div>
+  </div>
+</div>

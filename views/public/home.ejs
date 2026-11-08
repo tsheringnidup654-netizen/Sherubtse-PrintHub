@@ -1,0 +1,93 @@
+<%- include('../partials/head') %>
+
+<section class="hero">
+  <div class="container-xl">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="hero-chip mb-3"><i class="bi bi-mortarboard-fill text-primary"></i> Sherubtse College, Kanglung</span>
+        <h1 class="mb-3">Print Smart.<br><span>Save Time.</span><br>Collect with Ease.</h1>
+        <p class="lead mb-4">Upload your documents, pick the finish you need and choose exactly when you want to collect them. Track every order live with a countdown to your deadline.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="/services" class="btn btn-navy btn-lg px-4"><i class="bi bi-printer me-2"></i>Start printing</a>
+          <% if (!user) { %><a href="/register" class="btn btn-outline-navy btn-lg px-4">Create free account</a>
+          <% } else { %><a href="<%= user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard' %>" class="btn btn-outline-navy btn-lg px-4">Go to dashboard</a><% } %>
+        </div>
+        <div class="d-flex gap-4 mt-4 small text-muted fw-semibold">
+          <span><i class="bi bi-qr-code text-primary me-1"></i>QR collection</span>
+          <span><i class="bi bi-alarm text-primary me-1"></i>Live countdown</span>
+          <span><i class="bi bi-lightning-charge text-primary me-1"></i>Urgent option</span>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-art">
+          <div class="logo-card"><img src="/img/logo.png" alt="Sherubtse College crest, Kanglung"></div>
+          <div class="float-chip c1"><i class="bi bi-file-earmark-pdf"></i> Upload PDF, DOCX, PPTX</div>
+          <div class="float-chip c2"><i class="bi bi-alarm"></i> Pick your deadline</div>
+          <div class="float-chip c3"><i class="bi bi-box-seam"></i> Collect with QR</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-xl">
+    <div class="section-head reveal"><div class="eyebrow">What we offer</div><h2>Everything you need, one click away</h2><p class="text-muted">From last-minute assignment printing to hard-bound project reports.</p></div>
+    <div class="row g-4">
+      <% services.forEach(function (s, i) { %>
+        <div class="col-sm-6 col-lg-3 reveal" style="transition-delay: <%= (i % 4) * 70 %>ms">
+          <a href="/student/customize?service=<%= s.slug %>" class="ph-card hover d-block h-100 card-pad text-reset">
+            <div class="icon-tile mb-3"><i class="bi <%= s.icon %>"></i></div>
+            <h6 class="mb-1"><%= s.name %></h6>
+            <p class="small text-muted mb-2"><%= s.description %></p>
+            <strong class="text-navy"><%= money(s.base_price) %></strong> <small class="text-muted"><%= s.unit_label %></small>
+          </a>
+        </div>
+      <% }) %>
+    </div>
+    <div class="text-center mt-4"><a href="/services" class="btn btn-outline-navy">View all services &amp; price calculator <i class="bi bi-arrow-right ms-1"></i></a></div>
+  </div>
+</section>
+
+<section class="section bg-sky">
+  <div class="container-xl">
+    <div class="section-head reveal"><div class="eyebrow">How it works</div><h2>Four simple steps</h2></div>
+    <div class="row g-4">
+      <% [['Upload', 'Add your PDF, Word or PowerPoint file and set the pages and copies.', 'bi-cloud-arrow-up'], ['Customise', 'Choose paper size, colour, sides, quality and binding. The price updates live.', 'bi-sliders'], ['Pick a deadline', 'Select the date and time you want to collect. A countdown keeps you on track.', 'bi-calendar-check'], ['Collect', 'Show your order QR code at the print shop and pick up your documents.', 'bi-qr-code-scan']].forEach(function (st, i) { %>
+        <div class="col-md-6 col-lg-3 reveal" style="transition-delay: <%= i * 80 %>ms">
+          <div class="ph-card card-pad h-100"><div class="step-num"><%= i + 1 %></div><h5><%= st[0] %></h5><p class="text-muted small mb-0"><%= st[1] %></p></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-xl">
+    <div class="row g-4">
+      <% [['bi-alarm', 'Smart printing countdown', 'See exactly how much time is left to your collection deadline, with green, yellow and red alerts.'], ['bi-diagram-3', 'Live order tracking', 'Follow your order from Pending to Collected with a timeline of every status change.'], ['bi-receipt', 'Instant invoices', 'Download a professional PDF invoice for every order, ready for your records.'], ['bi-bell', 'Smart notifications', 'Get notified when your order is accepted, being printed, ready or delayed.']].forEach(function (f, i) { %>
+        <div class="col-md-6 col-lg-3 reveal" style="transition-delay: <%= i * 80 %>ms"><div class="feature-ico"><i class="bi <%= f[0] %>"></i></div><h5><%= f[1] %></h5><p class="text-muted small"><%= f[2] %></p></div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container-xl">
+    <div class="stat-band reveal"><div class="row text-center g-3">
+      <div class="col-4"><div class="n"><%= stats.students %></div><small>Registered students</small></div>
+      <div class="col-4"><div class="n"><%= stats.collected %></div><small>Orders collected</small></div>
+      <div class="col-4"><div class="n"><%= stats.reviews ? Number(stats.rating).toFixed(1) + ' ★' : '—' %></div><small>Average rating (<%= stats.reviews %> reviews)</small></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container-xl"><div class="cta-band reveal">
+    <h2>Ready to skip the queue?</h2>
+    <p class="mb-4" style="color:#cfe0ff"><%= TAGLINE %></p>
+    <a href="<%= user ? '/student/customize' : '/register' %>" class="btn btn-light btn-lg px-4 fw-bold text-navy">Place your first order</a>
+  </div></div>
+</section>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,39 @@
+<%
+  // Pages that pass a `section` value use the dashboard layout (sidebar); public pages do not.
+  const isDash = typeof locals.section !== 'undefined';
+%><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sherubtse PrintHub - online printing, photocopying, binding and lamination for Sherubtse College, Bhutan.">
+  <title><%= title ? title + ' | ' : '' %><%= APP_NAME %></title>
+  <link rel="icon" type="image/png" href="/img/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/main.css" rel="stylesheet">
+  <% if (isDash) { %><link href="/css/dashboard.css" rel="stylesheet"><% } %>
+  <% pageCss.forEach(function (c) { %><link href="/css/pages/<%= c %>.css" rel="stylesheet">
+  <% }) %>
+</head>
+<body data-server-now="<%= serverNow %>" data-csrf="<%= csrfToken %>"
+      data-flash="<%= flash ? JSON.stringify(flash) : '' %>"
+      data-unread-url="<%= user ? (user.role === 'admin' ? '/admin/api/unread' : '/student/api/unread') : '' %>">
+<div id="page-loader" aria-hidden="true"><div class="spinner"></div></div>
+<%- include('navbar') %>
+<% if (isDash) { %>
+<div class="dash-shell">
+  <aside class="dash-side offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Dashboard menu">
+    <div class="offcanvas-header d-lg-none"><h6 class="m-0">Menu</h6><button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar"></button></div>
+    <div class="offcanvas-body d-block p-0"><%- include('sidebar') %></div>
+  </aside>
+  <main class="dash-main">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger"><ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+<% } else { %>
+<main>
+<% } %>

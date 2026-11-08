@@ -1,0 +1,16 @@
+<%# Visual progress tracker. Usage: include('../partials/tracker', { status: order.status }) %>
+<% const steps = [['pending', 'Pending', 'bi-hourglass-split'], ['accepted', 'Accepted', 'bi-check2-circle'], ['printing', 'Printing', 'bi-printer'], ['ready', 'Ready', 'bi-box-seam'], ['collected', 'Collected', 'bi-bag-check']];
+   const idx = steps.findIndex(function (s) { return s[0] === status; });
+   const pct = idx < 0 ? 0 : (idx / (steps.length - 1)) * 84; %>
+<% if (idx < 0) { %>
+  <div class="banner-bad"><i class="bi bi-<%= status === 'rejected' ? 'x-octagon' : 'slash-circle' %> me-2"></i>This order was <%= status %>.</div>
+<% } else { %>
+  <div class="tracker" role="list" aria-label="Order progress">
+    <div class="fill" style="width: <%= pct %>%"></div>
+    <% steps.forEach(function (s, i) { %>
+      <div class="tr-step <%= i < idx || status === 'collected' ? 'done' : (i === idx ? 'current' : '') %>" role="listitem">
+        <div class="tr-dot"><i class="bi <%= s[2] %>"></i></div><small><%= s[1] %></small>
+      </div>
+    <% }) %>
+  </div>
+<% } %>

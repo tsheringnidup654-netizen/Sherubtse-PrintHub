@@ -1,0 +1,44 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Feedback &amp; ratings</h2><p>Rate your collected orders to help the print shop improve.</p></div></div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ph-card card-pad">
+      <h6 class="mb-3">Leave a review</h6>
+      <% if (!pending.length) { %>
+        <p class="text-muted small mb-0">Nothing to review right now. Once you collect an order you can rate it here.</p>
+      <% } else { %>
+      <form method="post" action="/student/feedback" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="form-label" for="order_id">Order</label>
+        <select class="form-select mb-3" id="order_id" name="order_id">
+          <% pending.forEach(function (o) { %><option value="<%= o.id %>" <%= selected === o.id ? 'selected' : '' %>><%= o.order_number %> — <%= o.services %></option><% }) %>
+        </select>
+        <span class="form-label d-block">Rating</span>
+        <div class="opt-group mb-3">
+          <% [5, 4, 3, 2, 1].forEach(function (n) { %><input type="radio" name="rating" id="r<%= n %>" value="<%= n %>" <%= n === 5 ? 'checked' : '' %>><label for="r<%= n %>"><%= n %> ★</label><% }) %>
+        </div>
+        <label class="form-label" for="comment">Comments <span class="text-muted fw-normal">(optional)</span></label>
+        <textarea class="form-control mb-3" id="comment" name="comment" rows="4" maxlength="1000" placeholder="Tell us about print quality, speed and service"></textarea>
+        <button class="btn btn-navy" type="submit"><i class="bi bi-send me-1"></i>Submit feedback</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>My reviews (<%= mine.length %>)</h6></div>
+      <% if (!mine.length) { %>
+        <%- include('../partials/empty', { icon: 'bi-star', heading: 'No reviews yet', text: 'Your submitted reviews will appear here.' }) %>
+      <% } else { mine.forEach(function (f) { %>
+        <div class="notif-item"><div class="flex-grow-1">
+          <div class="d-flex justify-content-between flex-wrap gap-1"><strong><a href="/student/orders/<%= f.order_id %>"><%= f.order_number %></a></strong><small class="text-muted"><%= fmtShort(f.created_at) %></small></div>
+          <div class="star-rating"><%= '★'.repeat(f.rating) %><span class="text-muted"><%= '★'.repeat(5 - f.rating) %></span></div>
+          <% if (f.comment) { %><div class="small">“<%= f.comment %>”</div><% } %>
+          <% if (f.admin_reply) { %><div class="small text-muted mt-1"><i class="bi bi-reply me-1"></i><strong>Print shop:</strong> <%= f.admin_reply %></div><% } %>
+        </div></div>
+      <% }) } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

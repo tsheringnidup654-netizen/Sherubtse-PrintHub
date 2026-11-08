@@ -1,0 +1,30 @@
+<%- include('../partials/head') %>
+<%
+  const kb = function (b) { b = Number(b); return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
+%>
+<div class="dash-title"><div><h2>Uploaded documents</h2><p>Student files are private. Only administrators and the owner can open them.</p></div></div>
+<form class="filter-bar" method="get" action="/admin/documents" data-no-loading>
+  <div class="row g-2"><div class="col-md-6"><input class="form-control" type="search" name="q" value="<%= q %>" placeholder="Search by file name or student" aria-label="Search documents"></div>
+    <div class="col-auto"><button class="btn btn-navy" type="submit"><i class="bi bi-search me-1"></i>Search</button> <a class="btn btn-outline-secondary" href="/admin/documents">Reset</a></div></div>
+</form>
+<div class="ph-card">
+  <% if (!documents.length) { %><%- include('../partials/empty', { icon: 'bi-folder2-open', heading: 'No documents', text: 'Nothing has been uploaded yet.' }) %>
+  <% } else { %>
+  <div class="table-responsive"><table class="table ph-table">
+    <thead><tr><th>File</th><th>Student</th><th>Pages</th><th>Size</th><th>Orders</th><th>Uploaded</th><th></th></tr></thead>
+    <tbody>
+    <% documents.forEach(function (d) { %>
+      <tr>
+        <td class="text-break"><i class="bi bi-file-earmark-text me-1 text-primary"></i><strong><%= d.original_name %></strong></td>
+        <td class="small"><%= d.full_name %><div class="text-muted"><%= d.student_id || '' %></div></td>
+        <td><%= d.page_count || '—' %></td><td class="small"><%= kb(d.size_bytes) %></td>
+        <td class="small"><%= d.orders || '—' %></td>
+        <td class="small"><%= fmtShort(d.uploaded_at) %></td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-navy" target="_blank" rel="noopener" href="/admin/documents/<%= d.id %>/file"><i class="bi <%= d.mime_type === 'application/pdf' ? 'bi-eye' : 'bi-download' %>"></i> <%= d.mime_type === 'application/pdf' ? 'View' : 'Download' %></a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

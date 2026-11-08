@@ -1,0 +1,48 @@
+<%
+  const isAdmin = user.role === 'admin';
+  const menu = isAdmin ? [
+    ['Overview', null],
+    ['dashboard', '/admin/dashboard', 'bi-speedometer2', 'Dashboard'],
+    ['Operations', null],
+    ['orders', '/admin/orders', 'bi-bag-check', 'Manage orders'],
+    ['deadlines', '/admin/deadlines', 'bi-alarm', 'Manage deadlines'],
+    ['collect', '/admin/collect', 'bi-qr-code-scan', 'Collect order (QR)'],
+    ['documents', '/admin/documents', 'bi-file-earmark-arrow-up', 'Documents'],
+    ['payments', '/admin/payments', 'bi-credit-card', 'Payments'],
+    ['Catalogue & people', null],
+    ['services', '/admin/services', 'bi-tags', 'Services & prices'],
+    ['students', '/admin/students', 'bi-people', 'Students'],
+    ['feedback', '/admin/feedback', 'bi-chat-heart', 'Feedback'],
+    ['reports', '/admin/reports', 'bi-graph-up-arrow', 'Reports'],
+    ['notifications', '/admin/notifications', 'bi-bell', 'Notifications'],
+  ] : [
+    ['Overview', null],
+    ['dashboard', '/student/dashboard', 'bi-speedometer2', 'Dashboard'],
+    ['Printing', null],
+    ['customize', '/student/customize', 'bi-plus-circle', 'New print order'],
+    ['documents', '/student/documents', 'bi-cloud-arrow-up', 'Upload document'],
+    ['cart', '/student/cart', 'bi-cart3', 'Shopping cart'],
+    ['orders', '/student/orders', 'bi-box-seam', 'My orders'],
+    ['Account', null],
+    ['notifications', '/student/notifications', 'bi-bell', 'Notifications'],
+    ['history', '/student/history', 'bi-bar-chart-line', 'Printing history'],
+    ['feedback', '/student/feedback', 'bi-star', 'Feedback'],
+    ['profile', '/student/profile', 'bi-person-gear', 'My profile'],
+  ];
+%>
+<div class="side-user">
+  <% if (user.avatar) { %><img class="avatar" src="/avatars/<%= user.avatar %>" alt=""><% } else { %><span class="avatar"><%= user.full_name.trim().charAt(0).toUpperCase() %></span><% } %>
+  <div class="min-w-0"><strong class="d-block text-navy text-truncate"><%= user.full_name %></strong><small><%= isAdmin ? 'Print shop administrator' : (user.student_id || 'Student') %></small></div>
+</div>
+<nav>
+<% menu.forEach(function (m) { %>
+  <% if (m[1] === null) { %><div class="side-title"><%= m[0] %></div>
+  <% } else { %>
+    <a class="side-link <%= section === m[0] ? 'active' : '' %>" href="<%= m[1] %>">
+      <i class="bi <%= m[2] %>"></i><span><%= m[3] %></span>
+      <% if (m[0] === 'notifications' && unreadCount) { %><span class="pill"><%= unreadCount %></span><% } %>
+      <% if (m[0] === 'cart' && cartCount) { %><span class="pill"><%= cartCount %></span><% } %>
+    </a>
+  <% } %>
+<% }) %>
+</nav>

@@ -1,0 +1,110 @@
+<%- include('../partials/head') %>
+<div class="dash-title">
+  <div>
+    <h2>Order <%= order.order_number %></h2>
+    <p>Placed <%= fmtShort(order.created_at) %> · <%- include('../partials/status', { s: order.status }) %>
+      <% if (order.is_urgent) { %><span class="tag-urgent"><i class="bi bi-lightning-charge-fill"></i> Urgent <%= order.urgent_status === 'requested' ? '(awaiting approval)' : '' %></span><% } %>
+      <% if (order.urgent_status === 'rejected') { %><span class="tag-delay">Urgent request declined</span><% } %></p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-navy" href="/student/orders/<%= order.id %>/receipt"><i class="bi bi-file-earmark-pdf me-1"></i>Download invoice</a>
+    <% if (canCancel) { %>
+      <form method="post" action="/student/orders/<%= order.id %>/cancel" data-confirm="Cancel order <%= order.order_number %>? This cannot be undone." data-confirm-btn="Yes, cancel order">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle me-1"></i>Cancel order</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="mb-4"><%- include('../partials/countdown', { o: order }) %></div>
+
+    <% if (order.is_delayed) { %><div class="delay-note mb-4"><strong><i class="bi bi-hourglass-split me-1"></i>Delay notice:</strong> <%= order.delay_note %></div><% } %>
+
+    <div class="ph-card card-pad mb-4">
+      <h6 class="mb-0">Order progress</h6>
+      <%- include('../partials/tracker', { status: order.status }) %>
+      <div class="row g-3 mt-2 small">
+        <div class="col-sm-6"><i class="bi bi-hourglass-split text-primary me-1"></i><strong>Estimated completion:</strong><br>
+          <% if (order.estimated_completion) { %><%= fmtFull(order.estimated_completion) %> <span class="text-muted">(confirmed by the print shop)</span>
+          <% } else { %><span class="text-muted">Not confirmed yet - the print shop will set this when it accepts your order.</span><% } %></div>
+        <div class="col-sm-6"><i class="bi bi-calendar-event text-primary me-1"></i><strong>You asked to collect:</strong><br><%= fmtFull(order.collection_deadline) %></div>
+      </div>
+    </div>
+
+    <div class="ph-card mb-4">
+      <div class="card-title-bar"><h6>Items</h6></div>
+      <div class="table-responsive">
+        <table class="table ph-table">
+          <thead><tr><th>Service</th><th>Details</th><th class="text-end">Amount</th></tr></thead>
+          <tbody>
+          <% items.forEach(function (it) { %>
+            <tr>
+              <td><strong><%= it.service_name %></strong><% if (it.document_name) { %><div class="small"><i class="bi bi-file-earmark-text me-1"></i><%= it.document_name %></div><% } %></td>
+              <td class="small"><%= it.pages %> page<%= it.pages > 1 ? 's' : '' %> × <%= it.copies %> cop<%= it.copies > 1 ? 'ies' : 'y' %><br><span class="text-muted"><%= optionSummary(it) %></span>
+                <% if (it.instructions) { %><br><em>“<%= it.instructions %>”</em><% } %></td>
+              <td class="text-end fw-bold"><%= money(it.line_total) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="2" class="text-end">Subtotal</td><td class="text-end"><%= money(order.subtotal) %></td></tr>
+            <% if (Number(order.urgent_fee) > 0) { %><tr><td colspan="2" class="text-end">Urgent surcharge</td><td class="text-end"><%= money(order.urgent_fee) %></td></tr><% } %>
+            <tr><td colspan="2" class="text-end fw-bold">Total</td><td class="text-end fw-bold text-navy"><%= money(order.total) %></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <% if (order.notes) { %><div class="card-pad pt-0 small"><strong>Your note:</strong> <%= order.notes %></div><% } %>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <% if (['accepted', 'printing', 'ready', 'collected'].includes(order.status) || order.status === 'pending') { %>
+    <div class="ph-card card-pad qr-box mb-4">
+      <h6 class="mb-2"><i class="bi bi-qr-code me-1"></i>Collection QR code</h6>
+      <img src="/student/orders/<%= order.id %>/qr" alt="QR code for order <%= order.order_number %>" width="190" height="190">
+      <p class="small text-muted mt-2 mb-0">Show this code at the print shop when you collect. It works only once the order is Ready for Collection.</p>
+    </div>
+    <% } %>
+
+    <div class="ph-card card-pad mb-4">
+      <h6 class="mb-3">Payment</h6>
+      <div class="summary-row"><span>Method</span><span class="text-capitalize"><%= payment ? payment.method : '—' %></span></div>
+      <div class="summary-row"><span>Status</span><span><% if (payment) { %><span class="st st-<%= payment.status %>"><%= payment.status %></span><% } %></span></div>
+      <% if (payment && payment.reference) { %><div class="summary-row"><span>Reference</span><span><%= payment.reference %></span></div><% } %>
+      <div class="summary-row"><span>Amount</span><strong><%= money(order.total) %></strong></div>
+    </div>
+
+    <% if (collection) { %>
+    <div class="ph-card card-pad mb-4">
+      <h6 class="mb-2"><i class="bi bi-bag-check me-1"></i>Collected</h6>
+      <div class="small">On <%= fmtShort(collection.collected_at) %><% if (collection.handed_by_name) { %><br>Handed over by <%= collection.handed_by_name %><% } %></div>
+    </div>
+    <% } %>
+
+    <% if (order.status === 'collected') { %>
+    <div class="ph-card card-pad mb-4">
+      <% if (feedback) { %>
+        <h6 class="mb-1">Your review</h6><div class="star-rating"><%= '★'.repeat(feedback.rating) %><span class="text-muted"><%= '★'.repeat(5 - feedback.rating) %></span></div>
+        <% if (feedback.comment) { %><p class="small mb-1">“<%= feedback.comment %>”</p><% } %>
+        <% if (feedback.admin_reply) { %><p class="small text-muted mb-0"><strong>Print shop reply:</strong> <%= feedback.admin_reply %></p><% } %>
+      <% } else { %>
+        <h6 class="mb-1">How was your order?</h6><p class="small text-muted">Rate your experience to help us improve.</p>
+        <a class="btn btn-navy btn-sm" href="/student/feedback?order=<%= order.id %>"><i class="bi bi-star me-1"></i>Leave feedback</a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <div class="ph-card card-pad">
+      <h6 class="mb-3">Order timeline</h6>
+      <ul class="timeline">
+        <% history.forEach(function (h) { %>
+          <li><strong><%= STATUS_LABELS[h.status] || h.status %></strong><div class="small"><%= h.note || '' %></div><div class="when"><%= fmtShort(h.changed_at) %></div></li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

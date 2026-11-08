@@ -1,0 +1,24 @@
+<%#
+  Live deadline card. Usage: include('../partials/countdown', { o: order })
+  The deadline comes from the database (collection_deadline). public/js/countdown.js ticks every second.
+  The countdown NEVER changes the order status - it only shows the requested deadline.
+%>
+<% const live = ACTIVE_STATUSES.includes(o.status); const st = live ? deadlineState(o.collection_deadline) : 'done'; %>
+<div class="deadline-card state-<%= st %>" data-deadline="<%= new Date(o.collection_deadline).toISOString() %>" data-live="<%= live %>">
+  <div class="dl-head">
+    <span class="dl-order">ORDER #<%= o.order_number %></span>
+    <span class="dl-badge" data-cd-badge><%= live ? ({ green: 'On track', yellow: 'Under 24 hours', red: 'Under 3 hours', expired: 'Deadline passed' })[st] : STATUS_LABELS[o.status] %></span>
+  </div>
+  <div class="dl-when"><i class="bi bi-calendar-event me-1"></i>Collection deadline: <strong><%= fmtFull(o.collection_deadline) %></strong></div>
+  <% if (live) { %>
+    <div class="cd" role="timer" aria-live="off">
+      <div class="cd-unit"><b data-u="d">0</b><small>Days</small></div><span class="cd-sep">:</span>
+      <div class="cd-unit"><b data-u="h">00</b><small>Hours</small></div><span class="cd-sep">:</span>
+      <div class="cd-unit"><b data-u="m">00</b><small>Minutes</small></div><span class="cd-sep">:</span>
+      <div class="cd-unit"><b data-u="s">00</b><small>Seconds</small></div>
+    </div>
+    <div class="dl-note"><i class="bi bi-info-circle me-1"></i>The requested time has passed. Your order status is still controlled by the print shop - check the tracker below.</div>
+  <% } else { %>
+    <div class="dl-done"><i class="bi bi-check2-circle me-1"></i>No countdown - order is <%= STATUS_LABELS[o.status].toLowerCase() %>.</div>
+  <% } %>
+</div>

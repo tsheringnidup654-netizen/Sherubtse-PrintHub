@@ -1,0 +1,51 @@
+<%- include('../partials/head') %>
+<% const c = stats.counts; %>
+<div class="dash-title"><div><h2>Admin dashboard</h2><p>Live overview of the print shop.</p></div>
+  <div class="d-flex gap-2 flex-wrap"><a href="/admin/collect" class="btn btn-navy"><i class="bi bi-qr-code-scan me-1"></i>Collect order</a><a href="/admin/deadlines" class="btn btn-outline-navy"><i class="bi bi-alarm me-1"></i>Deadlines</a></div></div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-people"></i></div><div><div class="num"><%= c.students %></div><div class="lbl">Registered students</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-bag"></i></div><div><div class="num"><%= c.orders %></div><div class="lbl">Total orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-hourglass-split"></i></div><div><div class="num"><%= c.pending %></div><div class="lbl">Pending orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-printer"></i></div><div><div class="num"><%= c.printing %></div><div class="lbl">Printing now</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-box-seam"></i></div><div><div class="num"><%= c.ready %></div><div class="lbl">Ready for collection</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-bag-check"></i></div><div><div class="num"><%= c.completed %></div><div class="lbl">Completed orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile warn"><div class="icon-tile"><i class="bi bi-exclamation-triangle"></i></div><div><div class="num"><%= c.urgent %></div><div class="lbl">Due within 3 hours</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-cash-coin"></i></div><div><div class="num"><%= money(stats.sales) %></div><div class="lbl">Total sales (paid)</div></div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-8">
+    <div class="ph-card"><div class="card-title-bar"><h6>Daily revenue (last 14 days)</h6></div><div class="card-pad"><div class="chart-box">
+      <canvas role="img" aria-label="Daily revenue chart" data-chart='<%= JSON.stringify({ type: "line", labels: stats.daily.map(function (d) { return d.label; }), values: stats.daily.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
+  </div>
+  <div class="col-xl-4">
+    <div class="ph-card"><div class="card-title-bar"><h6>Most popular services</h6></div><div class="card-pad"><div class="chart-box">
+      <canvas role="img" aria-label="Popular services chart" data-chart='<%= JSON.stringify({ type: "doughnut", labels: stats.popular.map(function (d) { return d.label; }), values: stats.popular.map(function (d) { return d.value; }), label: "Orders" }) %>'></canvas></div></div></div>
+  </div>
+  <div class="col-12">
+    <div class="ph-card"><div class="card-title-bar"><h6>Monthly revenue (last 6 months)</h6></div><div class="card-pad"><div class="chart-box" style="height:240px">
+      <canvas role="img" aria-label="Monthly revenue chart" data-chart='<%= JSON.stringify({ type: "bar", labels: stats.monthly.map(function (d) { return d.label; }), values: stats.monthly.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-6">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6><i class="bi bi-exclamation-triangle text-danger me-1"></i>Urgent orders (due within 3 hours or overdue)</h6><a class="small fw-bold" href="/admin/deadlines">All deadlines</a></div>
+      <% if (!urgent.length) { %><div class="p-4 text-center text-muted small">Nothing urgent right now.</div>
+      <% } else { %><div class="table-responsive"><table class="table ph-table"><thead><tr><th>Order</th><th>Student</th><th>Status</th><th>Time left</th></tr></thead><tbody>
+        <% urgent.forEach(function (o) { %><tr class="urgent-row"><td><a class="fw-bold" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a></td><td class="small"><%= o.full_name %></td><td><%- include('../partials/status', { s: o.status }) %></td><td><%- include('../partials/cd-inline', { o: o }) %></td></tr><% }) %>
+      </tbody></table></div><% } %>
+    </div>
+  </div>
+  <div class="col-xl-6">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>Latest orders</h6><a class="small fw-bold" href="/admin/orders">Manage orders</a></div>
+      <div class="table-responsive"><table class="table ph-table"><thead><tr><th>Order</th><th>Student</th><th>Status</th><th class="text-end">Total</th></tr></thead><tbody>
+        <% recent.forEach(function (o) { %><tr><td><a class="fw-bold" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a><% if (o.is_urgent) { %> <span class="tag-urgent">Urgent</span><% } %></td><td class="small"><%= o.full_name %></td><td><%- include('../partials/status', { s: o.status }) %></td><td class="text-end fw-bold"><%= money(o.total) %></td></tr><% }) %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

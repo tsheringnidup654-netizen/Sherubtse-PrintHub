@@ -1,0 +1,56 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Collect an order</h2><p>Scan the student's QR code or type the order number to hand over their documents.</p></div></div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ph-card card-pad">
+      <h6 class="mb-3"><i class="bi bi-qr-code-scan me-1"></i>Find an order</h6>
+      <div id="scan-box" class="reader-box mb-3" hidden><video id="scan-video" playsinline muted></video></div>
+      <div class="d-flex gap-2 mb-2">
+        <button class="btn btn-navy" type="button" id="scan-start"><i class="bi bi-camera-video me-1"></i>Scan QR with camera</button>
+        <button class="btn btn-outline-secondary" type="button" id="scan-stop" hidden>Stop scanning</button>
+      </div>
+      <p class="small text-muted" id="scan-note">Point the camera at the QR code shown on the student's phone or invoice.</p>
+      <hr>
+      <form method="get" action="/admin/collect" data-no-loading>
+        <label class="form-label" for="q">Order number or scanned code</label>
+        <div class="input-group"><input class="form-control" id="q" name="q" placeholder="e.g. SH2026001" autocomplete="off" required><button class="btn btn-navy" type="submit">Find</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <% if (!order) { %>
+      <div class="ph-card"><%- include('../partials/empty', { icon: 'bi-qr-code', heading: 'No order selected', text: 'Scan a QR code or enter an order number to begin.' }) %></div>
+    <% } else { %>
+      <div class="ph-card card-pad mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+          <div><h5 class="mb-0"><%= order.order_number %></h5><div class="small text-muted"><%= order.full_name %> (<%= order.student_id || order.email %>)</div></div>
+          <div><%- include('../partials/status', { s: order.status }) %></div>
+        </div>
+        <div class="small mb-2"><i class="bi bi-calendar-event me-1"></i>Deadline: <strong><%= fmtFull(order.collection_deadline) %></strong></div>
+        <ul class="small mb-3 ps-3">
+          <% items.forEach(function (it) { %><li><strong><%= it.service_name %></strong> — <%= it.pages %>p × <%= it.copies %><% if (it.document_name) { %> (<%= it.document_name %>)<% } %></li><% }) %>
+        </ul>
+        <div class="summary-row"><span>Total</span><strong><%= money(order.total) %></strong></div>
+        <div class="summary-row"><span>Payment</span><span class="text-capitalize"><%= order.payment_method %> · <span class="st st-<%= order.payment_status %>"><%= order.payment_status %></span></span></div>
+
+        <% if (collection) { %>
+          <div class="alert alert-success mt-3 mb-0"><i class="bi bi-check-circle me-1"></i>Already collected on <%= fmtShort(collection.collected_at) %><% if (collection.handed_by_name) { %> (handed over by <%= collection.handed_by_name %>)<% } %>.</div>
+        <% } else if (order.status === 'ready') { %>
+          <% if (order.payment_status !== 'paid' && order.payment_method === 'cash') { %><div class="alert alert-warning mt-3 py-2 small mb-0"><i class="bi bi-cash me-1"></i>Collect <strong><%= money(order.total) %></strong> in cash before handing over.</div><% } %>
+          <form method="post" action="/admin/collect/<%= order.qr_token %>" class="mt-3" data-confirm="Confirm that <%= order.full_name %> has received order <%= order.order_number %>?" data-confirm-btn="Yes, hand over">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="via" value="<%= via %>">
+            <label class="form-label" for="note">Note (optional)</label>
+            <input class="form-control mb-3" id="note" name="note" maxlength="200" placeholder="e.g. collected by classmate">
+            <button class="btn btn-navy w-100" type="submit"><i class="bi bi-bag-check me-1"></i>Mark as collected</button>
+          </form>
+        <% } else { %>
+          <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle me-1"></i>This order is <strong><%= STATUS_LABELS[order.status].toLowerCase() %></strong>. Only orders that are <em>Ready for Collection</em> can be handed over.
+            <a href="/admin/orders/<%= order.id %>" class="alert-link">Open order</a></div>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

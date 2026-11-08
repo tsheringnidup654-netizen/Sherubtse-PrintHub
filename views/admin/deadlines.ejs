@@ -1,0 +1,39 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Manage deadlines</h2><p>Live orders sorted by nearest collection deadline. Red = under 3 hours, yellow = under 24 hours.</p></div></div>
+
+<div class="ph-card">
+  <% if (!orders.length) { %><%- include('../partials/empty', { icon: 'bi-alarm', heading: 'No upcoming deadlines', text: 'There are no live orders right now.' }) %>
+  <% } else { %>
+  <div class="table-responsive"><table class="table ph-table align-middle">
+    <thead><tr><th>Order</th><th>Student</th><th>Status</th><th>Collection deadline</th><th>Countdown</th><th>Estimated completion</th><th></th></tr></thead>
+    <tbody>
+    <% orders.forEach(function (o) { const st = deadlineState(o.collection_deadline); const dl = toInputParts(o.collection_deadline); const est = toInputParts(o.estimated_completion); %>
+      <tr class="<%= st === 'red' || st === 'expired' ? 'urgent-row' : '' %>">
+        <td><a class="fw-bold" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a>
+          <% if (o.is_urgent) { %><span class="tag-urgent ms-1"><%= o.urgent_status === 'requested' ? 'Urgent?' : 'Urgent' %></span><% } %>
+          <% if (o.is_delayed) { %><span class="tag-delay ms-1">Delayed</span><% } %>
+          <div class="small text-muted"><%= o.total_pages %> pages</div></td>
+        <td class="small"><%= o.full_name %></td>
+        <td><%- include('../partials/status', { s: o.status }) %></td>
+        <td class="small"><%= fmtFull(o.collection_deadline) %></td>
+        <td><%- include('../partials/cd-inline', { o: o }) %></td>
+        <td class="small"><%= o.estimated_completion ? fmtShort(o.estimated_completion) : 'Not set' %></td>
+        <td class="text-end"><button class="btn btn-sm btn-outline-navy" type="button" data-bs-toggle="collapse" data-bs-target="#sch-<%= o.id %>" aria-expanded="false"><i class="bi bi-pencil-square"></i> Schedule</button></td>
+      </tr>
+      <tr class="collapse" id="sch-<%= o.id %>">
+        <td colspan="7" style="background:var(--sky-50)">
+          <form method="post" action="/admin/orders/<%= o.id %>/schedule" class="row g-2 align-items-end p-2" novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="deadlines">
+            <div class="col-md-3"><label class="form-label small">Estimated completion</label><div class="d-flex gap-1"><input class="form-control form-control-sm" type="date" name="est_date" value="<%= est.date %>" aria-label="Estimate date"><input class="form-control form-control-sm" type="time" name="est_time" value="<%= est.time %>" aria-label="Estimate time"></div></div>
+            <div class="col-md-3"><label class="form-label small">New collection deadline</label><div class="d-flex gap-1"><input class="form-control form-control-sm" type="date" name="deadline_date" aria-label="Deadline date"><input class="form-control form-control-sm" type="time" name="deadline_time" aria-label="Deadline time"></div></div>
+            <div class="col-md-4"><label class="form-label small"><input class="form-check-input me-1" type="checkbox" name="notify_delay"> Notify delay</label><input class="form-control form-control-sm" name="delay_note" maxlength="300" placeholder="Reason shown to the student" aria-label="Delay reason"></div>
+            <div class="col-md-2"><button class="btn btn-sm btn-navy w-100" type="submit">Save &amp; notify</button></div>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

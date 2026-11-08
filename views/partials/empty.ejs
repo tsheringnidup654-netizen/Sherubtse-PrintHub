@@ -1,0 +1,7 @@
+<%# Empty-state illustration. Usage: include('../partials/empty', { icon:'bi-inbox', heading:'...', text:'...', href:'/x', cta:'Go' }) %>
+<div class="empty-state">
+  <div class="empty-art"><i class="bi <%= icon %>"></i></div>
+  <h5><%= heading %></h5>
+  <p class="mb-3"><%= text %></p>
+  <% if (typeof href !== 'undefined' && href) { %><a href="<%= href %>" class="btn btn-navy"><%= cta %></a><% } %>
+</div>

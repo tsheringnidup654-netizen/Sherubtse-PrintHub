@@ -1,0 +1,4 @@
+<%# Compact countdown for tables. Usage: include('../partials/cd-inline', { o: order }) %>
+<% if (ACTIVE_STATUSES.includes(o.status)) { %>
+  <span class="cd-inline state-<%= deadlineState(o.collection_deadline) %>" data-deadline="<%= new Date(o.collection_deadline).toISOString() %>" data-live="true" data-compact="true">…</span>
+<% } else { %><span class="text-muted small">—</span><% } %>

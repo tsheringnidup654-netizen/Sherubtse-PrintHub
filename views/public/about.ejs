@@ -1,0 +1,29 @@
+<%- include('../partials/head') %>
+<section class="page-hero"><div class="container-xl"><h1>About Sherubtse PrintHub</h1><p class="mb-0"><%= TAGLINE %></p></div></section>
+<section class="section">
+  <div class="container-xl">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-6 reveal">
+        <h2 class="mb-3">Built for the Sherubtse community</h2>
+        <p class="text-muted">Sherubtse PrintHub is the online printing and photocopy store of Sherubtse College, Kanglung - the oldest college of the Royal University of Bhutan. We replace long queues and handwritten slips with a simple online order that works on your phone, tablet or laptop.</p>
+        <p class="text-muted">Students and staff upload their documents, choose exactly how they want them printed and select the date and time they will collect them. The print shop sees every request in one queue, prioritises by deadline, and keeps you updated at every step.</p>
+        <ul class="list-unstyled lh-lg">
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Transparent, per-page pricing with a live calculator</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Private documents - only you and the print shop can open them</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Bhutan time (Asia/Thimphu) used for every deadline</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>QR-code collection for fast, verified hand-over</li>
+        </ul>
+      </div>
+      <div class="col-lg-6 reveal">
+        <div class="ph-card card-pad">
+          <div class="d-flex align-items-center gap-3 mb-3"><img src="/img/logo.png" alt="Sherubtse College" style="height:70px;border-radius:10px"><div><h5 class="mb-0">Print shop information</h5><small class="text-muted">Sherubtse College</small></div></div>
+          <div class="contact-line"><i class="bi bi-geo-alt-fill text-primary fs-5"></i><div><strong>Location</strong><br><span class="text-muted"><%= settings.shop_location %></span></div></div>
+          <div class="contact-line"><i class="bi bi-clock-fill text-primary fs-5"></i><div><strong>Opening hours</strong><br><span class="text-muted"><%= settings.shop_hours %></span></div></div>
+          <div class="contact-line"><i class="bi bi-telephone-fill text-primary fs-5"></i><div><strong>Phone</strong><br><span class="text-muted"><%= settings.shop_phone %></span></div></div>
+          <div class="contact-line mb-0"><i class="bi bi-envelope-fill text-primary fs-5"></i><div><strong>E-mail</strong><br><span class="text-muted"><%= settings.shop_email %></span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/foot') %>

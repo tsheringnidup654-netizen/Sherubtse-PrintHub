@@ -1,0 +1,46 @@
+<%- include('../partials/head') %>
+<div class="auth-wrap">
+  <div class="auth-side">
+    <img src="/img/logo.png" alt="Sherubtse College crest">
+    <h2>Join <%= APP_NAME %></h2>
+    <p class="mb-4">Create your free account and order printing, copying, binding and lamination without standing in a queue.</p>
+    <ul class="list-unstyled lh-lg mb-0">
+      <li><i class="bi bi-cloud-arrow-up me-2"></i>Upload PDF, Word and PowerPoint files</li>
+      <li><i class="bi bi-calendar-check me-2"></i>Choose your own collection date and time</li>
+      <li><i class="bi bi-lock me-2"></i>Your documents stay private</li>
+    </ul>
+  </div>
+  <div class="auth-form">
+    <div class="auth-box">
+      <h2 class="mb-1">Create account</h2>
+      <p class="text-muted mb-4">Students: use your Sherubtse e-mail, e.g. <code>02230001.sherubtse@<%= collegeDomain %></code></p>
+      <% if (errors && errors.length) { %><div class="alert alert-danger"><ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div><% } %>
+      <form method="post" action="/register" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="mb-3"><label class="form-label" for="full_name">Full name</label>
+          <input class="form-control" id="full_name" name="full_name" value="<%= form.full_name || '' %>" required autocomplete="name"></div>
+        <div class="mb-3"><label class="form-label" for="email">College e-mail</label>
+          <input class="form-control" type="email" id="email" name="email" value="<%= form.email || '' %>" placeholder="02230001.sherubtse@<%= collegeDomain %>" required autocomplete="email"></div>
+        <div class="row g-3 mb-3">
+          <div class="col-6"><label class="form-label" for="student_id">Student ID <span class="text-muted fw-normal">(optional)</span></label>
+            <input class="form-control" id="student_id" name="student_id" value="<%= form.student_id || '' %>" placeholder="02230001"></div>
+          <div class="col-6"><label class="form-label" for="phone">Phone <span class="text-muted fw-normal">(optional)</span></label>
+            <input class="form-control" id="phone" name="phone" value="<%= form.phone || '' %>" placeholder="17123456" autocomplete="tel"></div>
+        </div>
+        <div class="mb-3"><label class="form-label" for="programme">Programme <span class="text-muted fw-normal">(optional)</span></label>
+          <input class="form-control" id="programme" name="programme" value="<%= form.programme || '' %>" placeholder="BSc Computer Science"></div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6"><label class="form-label" for="password">Password</label>
+            <div class="pw-wrap"><input class="form-control" type="password" id="password" name="password" autocomplete="new-password" required>
+              <button type="button" class="toggle" data-toggle-password="#password" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div>
+            <div class="form-text">8+ characters, letters and numbers.</div></div>
+          <div class="col-md-6"><label class="form-label" for="confirm_password">Confirm password</label>
+            <input class="form-control" type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required></div>
+        </div>
+        <button class="btn btn-navy w-100 py-2" type="submit">Create my account</button>
+      </form>
+      <p class="text-center mt-3 mb-0 small">Already registered? <a href="/login" class="fw-bold">Log in</a></p>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

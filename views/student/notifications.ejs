@@ -1,0 +1,31 @@
+<%- include('../partials/head') %>
+<%# Shared by students and admins: `base` is "/student" or "/admin". %>
+<div class="dash-title"><div><h2>Notification center</h2><p>Order updates, deadline alerts and delay notices.</p></div>
+  <% if (items.some(function (n) { return !n.is_read; })) { %>
+    <form method="post" action="<%= base %>/notifications/read-all" data-no-loading><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-outline-navy" type="submit"><i class="bi bi-check2-all me-1"></i>Mark all as read</button></form>
+  <% } %>
+</div>
+
+<div class="ph-card">
+  <% if (!items.length) { %>
+    <%- include('../partials/empty', { icon: 'bi-bell-slash', heading: 'No notifications yet', text: 'We will let you know when something happens to your orders.' }) %>
+  <% } else { items.forEach(function (n) {
+       const link = n.order_id ? base + '/orders/' + n.order_id : null; %>
+    <div class="notif-item <%= n.is_read ? '' : 'unread' %>">
+      <div class="icon-tile"><i class="bi <%= NOTIF_ICONS[n.type] || 'bi-bell' %>"></i></div>
+      <div class="flex-grow-1 min-w-0">
+        <div class="d-flex justify-content-between gap-2 flex-wrap"><strong><%= n.title %></strong><small class="text-muted"><%= fmtShort(n.created_at) %></small></div>
+        <div class="small text-muted"><%= n.message %></div>
+        <div class="mt-1 d-flex gap-2">
+          <% if (link) { %><a class="small fw-bold" href="<%= link %>">View order →</a><% } %>
+          <% if (!n.is_read) { %>
+            <form method="post" action="<%= base %>/notifications/<%= n.id %>/read" data-no-loading><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-link btn-sm p-0 text-muted" type="submit">Mark as read</button></form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% }) } %>
+</div>
+<%- include('../partials/foot') %>

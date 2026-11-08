@@ -1,0 +1,42 @@
+<%- include('../partials/head') %>
+<div class="auth-wrap">
+  <div class="auth-side">
+    <img src="/img/logo.png" alt="Sherubtse College crest">
+    <h2>Welcome back to <%= APP_NAME %></h2>
+    <p class="mb-4"><%= TAGLINE %></p>
+    <ul class="list-unstyled lh-lg mb-0">
+      <li><i class="bi bi-check-circle-fill me-2"></i>Track every order live</li>
+      <li><i class="bi bi-check-circle-fill me-2"></i>Countdown to your collection deadline</li>
+      <li><i class="bi bi-check-circle-fill me-2"></i>Collect with a QR code</li>
+    </ul>
+  </div>
+  <div class="auth-form">
+    <div class="auth-box">
+      <h2 class="mb-1">Log in</h2>
+      <p class="text-muted mb-4">Use your college e-mail and password.</p>
+      <% if (errors && errors.length) { %><div class="alert alert-danger"><% errors.forEach(function (e) { %><div><%= e %></div><% }) %></div><% } %>
+      <form method="post" action="/login" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="mb-3">
+          <label class="form-label" for="email">E-mail</label>
+          <input class="form-control" type="email" id="email" name="email" value="<%= form.email || '' %>" placeholder="02230001.sherubtse@rub.edu.bt" autocomplete="username" required autofocus>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="form-control" type="password" id="password" name="password" autocomplete="current-password" required>
+            <button type="button" class="toggle" data-toggle-password="#password" aria-label="Show or hide password"><i class="bi bi-eye"></i></button>
+          </div>
+        </div>
+        <button class="btn btn-navy w-100 py-2" type="submit">Log in</button>
+      </form>
+      <p class="text-center mt-3 mb-4 small">New here? <a href="/register" class="fw-bold">Create an account</a></p>
+      <div class="demo-box">
+        <strong class="text-navy d-block mb-1"><i class="bi bi-info-circle me-1"></i>Demo accounts (local testing)</strong>
+        Admin: <code>admin@sherubtse.edu.bt</code> / <code>Admin@123</code><br>
+        Student: <code>02230001.sherubtse@rub.edu.bt</code> / <code>Student@123</code>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

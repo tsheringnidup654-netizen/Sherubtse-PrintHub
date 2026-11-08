@@ -1,0 +1,71 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Checkout</h2><p>Choose when you want to collect your documents and how you will pay.</p></div>
+  <a href="/student/cart" class="btn btn-outline-navy"><i class="bi bi-arrow-left me-1"></i>Back to cart</a></div>
+
+<form id="checkout-form" method="post" action="/student/checkout" data-subtotal="<%= subtotal %>" data-urgent-pct="<%= urgentPct %>" data-min-lead="<%= settings.min_lead_minutes %>" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      <div class="ph-card card-pad mb-4">
+        <h6 class="mb-1"><i class="bi bi-calendar-event me-2"></i>Preferred collection date &amp; time</h6>
+        <p class="small text-muted">All times are Bhutan time (Asia/Thimphu). Your live countdown will run to this deadline.</p>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-4"><label class="form-label" for="deadline_date">Date</label>
+            <input class="form-control" type="date" id="deadline_date" name="deadline_date" min="<%= minDate %>" value="<%= form.date %>" required></div>
+          <div class="col-sm-4"><label class="form-label" for="deadline_time">Time</label>
+            <input class="form-control" type="time" id="deadline_time" name="deadline_time" value="<%= form.time %>" required></div>
+          <div class="col-sm-4"><span class="form-label d-block">Day of the week</span><span class="dayname" id="day-name">—</span></div>
+        </div>
+        <div class="mt-3 small"><i class="bi bi-hourglass-split me-1"></i>Time until collection: <span id="time-remaining" class="fw-bold">—</span></div>
+        <div class="est-box mt-3">
+          <div class="fw-bold text-navy mb-1"><i class="bi bi-hourglass-split me-1"></i>Estimated waiting time: <%= estimate.label %> <span class="text-muted fw-normal">(workload: <%= estimate.workload %>)</span></div>
+          <div class="text-muted" style="font-size:.78rem">This is only an estimate. The print shop confirms a completion time after accepting your order. Minimum lead time: <%= settings.min_lead_minutes %> minutes.</div>
+        </div>
+      </div>
+
+      <div class="ph-card card-pad mb-4">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="urgent" name="urgent" <%= form.urgent ? 'checked' : '' %>>
+          <label class="form-check-label fw-bold text-navy" for="urgent"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Urgent printing</label>
+        </div>
+        <div class="small text-muted mt-1">Priority handling for a <%= urgentPct %>% surcharge (<%= money(urgentAmount) %> on this order). The print shop may accept or decline depending on workload - if declined the surcharge is removed.</div>
+      </div>
+
+      <div class="ph-card card-pad mb-4">
+        <h6 class="mb-3"><i class="bi bi-credit-card me-2"></i>Payment method</h6>
+        <% methods.forEach(function (m, i) { %>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="payment_method" id="pm-<%= m.code %>" value="<%= m.code %>" data-needs-ref="<%= !!m.needs_reference %>" <%= (form.method ? form.method === m.code : i === 0) ? 'checked' : '' %>>
+            <label class="form-check-label" for="pm-<%= m.code %>"><strong><%= m.label %></strong><% if (m.instructions) { %><span class="d-block small text-muted"><%= m.instructions %></span><% } %></label>
+          </div>
+        <% }) %>
+        <div id="ref-wrap" class="mt-3" hidden>
+          <label class="form-label" for="payment_reference">Transaction / journal reference</label>
+          <input class="form-control" id="payment_reference" name="payment_reference" value="<%= form.reference || '' %>" maxlength="80" placeholder="e.g. 123456789">
+          <div class="form-text">The print shop verifies the payment before handing over your order.</div>
+        </div>
+      </div>
+
+      <div class="ph-card card-pad">
+        <label class="form-label" for="notes">Notes for the print shop <span class="text-muted fw-normal">(optional)</span></label>
+        <textarea class="form-control" id="notes" name="notes" rows="2" maxlength="500"><%= form.notes || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="ph-card card-pad price-panel">
+        <h6 class="mb-3">Order summary</h6>
+        <% lines.forEach(function (l) { %>
+          <div class="d-flex justify-content-between small mb-2 gap-2"><span><%= l.service_name %> <span class="text-muted">(<%= l.pages %>p × <%= l.copies %>)</span></span><strong><%= money(l.line_total) %></strong></div>
+        <% }) %>
+        <div class="summary-row"><span>Subtotal</span><span><%= money(subtotal) %></span></div>
+        <div class="summary-row" id="row-urgent" hidden><span>Urgent surcharge</span><span id="urgent-amount"><%= money(urgentAmount) %></span></div>
+        <div class="summary-row total"><span>Total</span><span id="grand-total"><%= money(subtotal) %></span></div>
+        <button class="btn btn-navy w-100 mt-3" type="submit"><i class="bi bi-check2-circle me-1"></i>Confirm order</button>
+        <p class="small text-muted mt-2 mb-0">You can cancel an order for free until printing starts.</p>
+      </div>
+    </div>
+  </div>
+</form>
+<%- include('../partials/foot') %>

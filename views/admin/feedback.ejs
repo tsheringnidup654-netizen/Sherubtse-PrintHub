@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Manage feedback</h2><p><%= summary.n %> review<%= summary.n === 1 ? '' : 's' %> · average rating <strong><%= Number(summary.avg).toFixed(1) %> ★</strong></p></div></div>
+
+<div class="ph-card mb-4">
+  <div class="card-title-bar"><h6>Order reviews</h6></div>
+  <% if (!items.length) { %><%- include('../partials/empty', { icon: 'bi-chat-heart', heading: 'No reviews yet', text: 'Student ratings will appear here.' }) %>
+  <% } else { items.forEach(function (f) { %>
+    <div class="notif-item">
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between flex-wrap gap-1">
+          <div><strong><%= f.full_name %></strong> <span class="text-muted small">· <a href="/admin/orders/<%= f.order_id %>"><%= f.order_number %></a></span>
+            <span class="st <%= f.is_visible ? 'st-collected' : 'st-cancelled' %> ms-1"><%= f.is_visible ? 'Visible' : 'Hidden' %></span></div>
+          <small class="text-muted"><%= fmtShort(f.created_at) %></small>
+        </div>
+        <div class="star-rating"><%= '★'.repeat(f.rating) %><span class="text-muted"><%= '★'.repeat(5 - f.rating) %></span></div>
+        <% if (f.comment) { %><div class="small mb-2">“<%= f.comment %>”</div><% } %>
+        <form method="post" action="/admin/feedback/<%= f.id %>" class="row g-2" data-no-loading>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-7"><input class="form-control form-control-sm" name="reply" maxlength="500" value="<%= f.admin_reply || '' %>" placeholder="Public reply to the student" aria-label="Reply"></div>
+          <div class="col-md-3"><select class="form-select form-select-sm" name="visible" aria-label="Visibility"><option value="true" <%= f.is_visible ? 'selected' : '' %>>Visible</option><option value="false" <%= !f.is_visible ? 'selected' : '' %>>Hidden</option></select></div>
+          <div class="col-md-2"><button class="btn btn-sm btn-navy w-100" type="submit">Save</button></div>
+        </form>
+      </div>
+    </div>
+  <% }) } %>
+</div>
+
+<div class="ph-card" id="messages">
+  <div class="card-title-bar"><h6>Contact messages</h6></div>
+  <% if (!messages.length) { %><div class="p-4 text-center text-muted small">No messages received.</div>
+  <% } else { messages.forEach(function (m) { %>
+    <div class="notif-item <%= m.is_read ? '' : 'unread' %>">
+      <div class="icon-tile"><i class="bi bi-envelope<%= m.is_read ? '-open' : '' %>"></i></div>
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between flex-wrap gap-1"><strong><%= m.subject %></strong><small class="text-muted"><%= fmtShort(m.created_at) %></small></div>
+        <div class="small text-muted mb-1"><%= m.name %> · <a href="mailto:<%= m.email %>"><%= m.email %></a></div>
+        <div class="small" style="white-space:pre-wrap"><%= m.message %></div>
+        <% if (!m.is_read) { %><form method="post" action="/admin/messages/<%= m.id %>/read" class="mt-1" data-no-loading><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-link btn-sm p-0" type="submit">Mark as read</button></form><% } %>
+      </div>
+    </div>
+  <% }) } %>
+</div>
+<%- include('../partials/foot') %>

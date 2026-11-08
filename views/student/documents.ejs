@@ -1,0 +1,87 @@
+<%- include('../partials/head') %>
+<%
+  const kb = function (b) { b = Number(b); return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
+  const extOf = function (n) { return (n.split('.').pop() || '').toLowerCase(); };
+%>
+<div class="dash-title"><div><h2>Upload document</h2><p>Your files are private - only you and the print shop can open them.</p></div>
+  <a href="/student/customize" class="btn btn-outline-navy"><i class="bi bi-sliders me-1"></i>Customise a print order</a></div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="ph-card card-pad">
+      <h6 class="mb-3">Add a new file</h6>
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" data-max-bytes="<%= maxMb * 1048576 %>" aria-label="Drop a file here or press Enter to browse">
+        <div class="big-ico"><i class="bi bi-cloud-arrow-up"></i></div>
+        <h6 class="mt-2 mb-1">Drag &amp; drop your file here</h6>
+        <p class="small text-muted mb-2">or click to browse</p>
+        <span class="small text-muted">PDF, DOC, DOCX, PPT, PPTX · max <%= maxMb %> MB</span>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx" hidden>
+      <div id="chosen" hidden>
+        <div class="file-chip mb-3">
+          <div class="icon-tile"><i class="bi bi-file-earmark-text"></i></div>
+          <div class="min-w-0 flex-grow-1"><strong class="d-block text-truncate" id="file-name"></strong><small class="text-muted" id="file-size"></small></div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-choice" aria-label="Remove chosen file"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <label class="form-label" for="page-count">Number of pages <span class="text-muted fw-normal">(detected for PDFs - please check)</span></label>
+        <input class="form-control mb-3" type="number" id="page-count" min="1" max="5000" placeholder="e.g. 12">
+        <iframe id="preview-frame" class="preview-frame mb-3" title="Document preview" hidden></iframe>
+        <div id="no-preview" class="alert alert-info small" hidden><i class="bi bi-info-circle me-1"></i>A preview is only available for PDF files. Word and PowerPoint files are checked and stored securely.</div>
+        <div class="progress upload-bar mb-3" hidden><div class="progress-bar" id="upload-bar" style="width:0"></div></div>
+        <button type="button" class="btn btn-navy w-100" id="upload-btn"><i class="bi bi-upload me-1"></i>Upload document</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>My documents (<%= documents.length %>)</h6></div>
+      <% if (!documents.length) { %>
+        <%- include('../partials/empty', { icon: 'bi-folder2-open', heading: 'No documents yet', text: 'Upload your first file to get started.' }) %>
+      <% } else { %>
+      <div class="table-responsive">
+        <table class="table ph-table">
+          <thead><tr><th>File</th><th>Pages</th><th>Uploaded</th><th class="text-end">Actions</th></tr></thead>
+          <tbody>
+          <% documents.forEach(function (d) { %>
+            <tr>
+              <td><div class="fw-semibold text-break"><%= d.original_name %></div><small class="text-muted"><%= extOf(d.original_name).toUpperCase() %> · <%= kb(d.size_bytes) %></small></td>
+              <td>
+                <form method="post" action="/student/documents/<%= d.id %>/pages" class="d-flex gap-1" data-no-loading>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input class="form-control form-control-sm" style="width:72px" type="number" min="1" max="5000" name="page_count" value="<%= d.page_count || '' %>" placeholder="?" aria-label="Pages in <%= d.original_name %>">
+                  <button class="btn btn-sm btn-outline-navy" type="submit" title="Save page count"><i class="bi bi-check2"></i></button>
+                </form>
+              </td>
+              <td class="small"><%= fmtShort(d.uploaded_at) %></td>
+              <td class="text-end text-nowrap">
+                <% if (d.mime_type === 'application/pdf') { %>
+                  <button type="button" class="btn btn-sm btn-outline-navy" data-preview-url="/student/documents/<%= d.id %>/file" data-preview-name="<%= d.original_name %>" title="Preview"><i class="bi bi-eye"></i></button>
+                <% } else { %>
+                  <a class="btn btn-sm btn-outline-navy" href="/student/documents/<%= d.id %>/file" title="Download"><i class="bi bi-download"></i></a>
+                <% } %>
+                <a class="btn btn-sm btn-navy" href="/student/customize?document=<%= d.id %>" title="Print this document"><i class="bi bi-printer"></i></a>
+                <form method="post" action="/student/documents/<%= d.id %>/delete" class="d-inline" data-confirm="Delete &quot;<%= d.original_name %>&quot; permanently?" data-confirm-btn="Yes, delete">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="preview-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header"><h6 class="modal-title" id="modal-title">Preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body"><iframe id="modal-frame" class="preview-frame" style="height:70vh" title="Document preview"></iframe></div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,48 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>My profile</h2><p>Update your details, profile picture and password.</p></div></div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="ph-card card-pad text-center">
+      <% if (user.avatar) { %><img class="avatar avatar-lg mb-3" src="/avatars/<%= user.avatar %>" alt="Your profile picture">
+      <% } else { %><span class="avatar avatar-lg mb-3"><%= user.full_name.trim().charAt(0).toUpperCase() %></span><% } %>
+      <h5 class="mb-0"><%= user.full_name %></h5>
+      <div class="text-muted small mb-1"><%= user.email %></div>
+      <div class="small text-muted mb-3">Student ID: <%= user.student_id || '—' %> · Member since <%= fmtDate(user.created_at) %></div>
+      <form method="post" action="/student/profile/avatar" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input class="form-control form-control-sm mb-2" type="file" name="avatar" accept="image/png,image/jpeg" required aria-label="Choose profile picture">
+        <button class="btn btn-outline-navy btn-sm w-100" type="submit"><i class="bi bi-camera me-1"></i>Upload picture</button>
+        <div class="form-text">PNG or JPG, up to 2 MB.</div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="ph-card mb-4">
+      <div class="card-title-bar"><h6>Personal details</h6></div>
+      <form class="card-pad" method="post" action="/student/profile" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label" for="full_name">Full name</label><input class="form-control" id="full_name" name="full_name" value="<%= form.full_name || '' %>" required></div>
+          <div class="col-md-6"><label class="form-label" for="phone">Phone</label><input class="form-control" id="phone" name="phone" value="<%= form.phone || '' %>"></div>
+          <div class="col-md-6"><label class="form-label" for="programme">Programme</label><input class="form-control" id="programme" name="programme" value="<%= form.programme || '' %>"></div>
+          <div class="col-md-6"><label class="form-label" for="email-ro">E-mail (cannot be changed)</label><input class="form-control" id="email-ro" value="<%= user.email %>" disabled></div>
+          <div class="col-12"><button class="btn btn-navy" type="submit">Save changes</button></div>
+        </div>
+      </form>
+    </div>
+    <div class="ph-card">
+      <div class="card-title-bar"><h6>Change password</h6></div>
+      <form class="card-pad" method="post" action="/student/profile/password" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label" for="current_password">Current password</label><input class="form-control" type="password" id="current_password" name="current_password" autocomplete="current-password" required></div>
+          <div class="col-md-6"><label class="form-label" for="new_password">New password</label><input class="form-control" type="password" id="new_password" name="new_password" autocomplete="new-password" required><div class="form-text">8+ characters with letters and numbers.</div></div>
+          <div class="col-md-6"><label class="form-label" for="confirm_password">Confirm new password</label><input class="form-control" type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required></div>
+          <div class="col-12"><button class="btn btn-navy" type="submit">Update password</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

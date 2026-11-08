@@ -1,0 +1,16 @@
+<%- include('../partials/head') %>
+<section class="section">
+  <div class="container-xl">
+    <div class="empty-state" style="padding:4rem 1rem">
+      <div class="empty-art"><i class="bi <%= code === 403 ? 'bi-shield-lock' : code === 404 ? 'bi-compass' : 'bi-exclamation-triangle' %>"></i></div>
+      <div class="display-5 fw-800 text-navy"><%= code %></div>
+      <h4 class="mb-2"><%= title %></h4>
+      <p class="mb-4"><%= message %></p>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a href="/" class="btn btn-navy"><i class="bi bi-house me-1"></i>Back to home</a>
+        <% if (user) { %><a href="<%= user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard' %>" class="btn btn-outline-navy">My dashboard</a><% } %>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/foot') %>

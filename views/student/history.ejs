@@ -1,0 +1,31 @@
+<%- include('../partials/head') %>
+<div class="dash-title"><div><h2>Printing history &amp; analytics</h2><p>What you have printed and spent (cancelled and rejected orders are excluded).</p></div></div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-file-earmark-text"></i></div><div><div class="num"><%= summary.documents %></div><div class="lbl">Documents printed</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-files"></i></div><div><div class="num"><%= summary.copies %></div><div class="lbl">Copies ordered</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-stack"></i></div><div><div class="num"><%= summary.pages %></div><div class="lbl">Pages printed</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-wallet2"></i></div><div><div class="num"><%= money(summary.spent) %></div><div class="lbl">Total money spent</div></div></div></div>
+</div>
+
+<div class="ph-card mb-4">
+  <div class="card-title-bar"><h6>Monthly spending (last 12 months)</h6></div>
+  <div class="card-pad"><div class="chart-box">
+    <canvas aria-label="Monthly spending chart" role="img" data-chart='<%= JSON.stringify({ type: "bar", labels: summary.monthly.map(function (m) { return m.label; }), values: summary.monthly.map(function (m) { return m.value; }), label: "Spent (Nu)", money: true }) %>'></canvas>
+  </div></div>
+</div>
+
+<div class="ph-card">
+  <div class="card-title-bar"><h6>All orders</h6><a href="/student/orders" class="small fw-bold">Search &amp; filter</a></div>
+  <% if (!orders.length) { %>
+    <%- include('../partials/empty', { icon: 'bi-clock-history', heading: 'No history yet', text: 'Your finished orders will show up here.', href: '/services', cta: 'Browse services' }) %>
+  <% } else { %>
+  <div class="table-responsive"><table class="table ph-table">
+    <thead><tr><th>Order</th><th>Date</th><th>Services</th><th>Pages</th><th>Status</th><th class="text-end">Total</th></tr></thead>
+    <tbody><% orders.forEach(function (o) { %>
+      <tr><td><a class="fw-bold" href="/student/orders/<%= o.id %>"><%= o.order_number %></a></td><td class="small"><%= fmtDate(o.created_at) %></td><td class="small"><%= o.services %></td><td><%= o.total_pages %></td>
+        <td><%- include('../partials/status', { s: o.status }) %></td><td class="text-end fw-bold"><%= money(o.total) %></td></tr>
+    <% }) %></tbody></table></div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

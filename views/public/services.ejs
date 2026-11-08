@@ -1,0 +1,61 @@
+<%- include('../partials/head') %>
+<section class="page-hero"><div class="container-xl"><h1>Printing services</h1><p class="mb-0">Choose a service, estimate the cost, then order in a minute.</p></div></section>
+
+<section class="section pb-4">
+  <div class="container-xl">
+    <form class="row g-2 align-items-center mb-4" method="get" action="/services" data-no-loading>
+      <div class="col-lg-5"><div class="input-group"><span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span><input type="search" name="q" value="<%= q %>" class="form-control border-start-0" placeholder="Search services (e.g. binding, colour)" aria-label="Search services"></div></div>
+      <div class="col-lg-7 d-flex flex-wrap gap-2">
+        <a href="/services<%= q ? '?q=' + encodeURIComponent(q) : '' %>" class="cat-pill <%= !category ? 'active' : '' %>">All</a>
+        <% categories.forEach(function (c) { %><a href="/services?category=<%= c.slug %><%= q ? '&q=' + encodeURIComponent(q) : '' %>" class="cat-pill <%= category === c.slug ? 'active' : '' %>"><%= c.name %></a><% }) %>
+        <button class="btn btn-navy btn-sm ms-auto" type="submit">Search</button>
+      </div>
+    </form>
+
+    <% if (!services.length) { %>
+      <%- include('../partials/empty', { icon: 'bi-search', heading: 'No services found', text: 'Try a different search term or category.', href: '/services', cta: 'Show all services' }) %>
+    <% } else { %>
+    <div class="row g-4">
+      <% services.forEach(function (s) { %>
+        <div class="col-md-6 col-xl-3">
+          <div class="ph-card hover svc-card">
+            <div class="icon-tile"><i class="bi <%= s.icon %>"></i></div>
+            <span class="small text-muted fw-semibold text-uppercase"><%= s.category_name %></span>
+            <h5 class="mt-1"><%= s.name %></h5>
+            <p class="small text-muted flex-grow-1"><%= s.description %></p>
+            <div class="price mb-1"><%= money(s.base_price) %> <small><%= s.unit_label %></small></div>
+            <% if (s.colour_price != null) { %><div class="small text-muted mb-2">Colour from <strong><%= money(s.colour_price) %></strong></div><% } %>
+            <div class="opts mb-3"><i class="bi bi-sliders2 me-1"></i><%= s.options_text %></div>
+            <% if (s.avg_rating) { %><div class="small mb-2"><span class="star-rating">★</span> <%= s.avg_rating %> average rating</div><% } %>
+            <a href="/student/customize?service=<%= s.slug %>" class="btn btn-navy w-100"><i class="bi bi-bag-plus me-1"></i>Order now</a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<section class="section bg-sky" id="calculator">
+  <div class="container-xl">
+    <div class="section-head"><div class="eyebrow">Printing cost calculator</div><h2>Estimate before you order</h2><p class="text-muted">Prices are calculated by the print shop's server using today's rates.</p></div>
+    <% const calcService = allServices[0]; %>
+    <% if (calcService) { %>
+    <form id="calc-form" data-calc-only autocomplete="off">
+      <div class="row g-4">
+        <div class="col-lg-8"><div class="ph-card card-pad">
+          <label class="form-label" for="calc-service">Service</label>
+          <select class="form-select mb-3" id="calc-service" name="service_id">
+            <% allServices.forEach(function (s) { %><option value="<%= s.id %>" data-slug="<%= s.slug %>"><%= s.name %></option><% }) %>
+          </select>
+          <%- include('../partials/print-options', { item: { pages: 10, copies: 1, paper_size: 'A4', colour_mode: 'bw', sided: 'single', orientation: 'portrait', quality: 'normal', binding: 'none' }, service: calcService }) %>
+        </div></div>
+        <div class="col-lg-4">
+          <%- include('../partials/price-panel', { panelFooter: '<a href="/student/customize" class="btn btn-navy w-100 mt-3">Continue to order</a>' }) %>
+        </div>
+      </div>
+    </form>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/foot') %>

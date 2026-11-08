@@ -1,0 +1,14 @@
+<%# Live price box (filled in by calculator.js from GET /api/price) %>
+<div class="ph-card card-pad price-panel" id="price-panel">
+  <div class="text-muted small fw-semibold text-uppercase mb-1">Estimated total</div>
+  <div class="price-total" data-price-total>Nu 0.00</div>
+  <ul class="price-lines" data-price-lines></ul>
+  <div class="alert alert-danger py-2 small mt-2" id="price-error" hidden></div>
+  <div class="est-box mt-3">
+    <div class="fw-bold text-navy mb-1"><i class="bi bi-hourglass-split me-1"></i>Estimated waiting time</div>
+    <div data-est>—</div>
+    <div class="text-muted mt-1" style="font-size:.74rem">This is only an estimate based on the current queue. A completion time is confirmed only when the print shop accepts your order.</div>
+  </div>
+  <div class="small text-muted mt-3" data-price-urgent></div>
+  <%- typeof panelFooter !== 'undefined' ? panelFooter : '' %>
+</div>

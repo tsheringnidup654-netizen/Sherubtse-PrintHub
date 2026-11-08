@@ -1,0 +1,38 @@
+<%- include('../partials/head') %>
+<section class="page-hero"><div class="container-xl"><h1>Contact us</h1><p class="mb-0">Questions about an order, a price or a special request? Send us a message.</p></div></section>
+<section class="section">
+  <div class="container-xl">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="ph-card card-pad">
+          <h4 class="mb-3">Send a message</h4>
+          <% if (errors && errors.length) { %><div class="alert alert-danger"><ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div><% } %>
+          <form method="post" action="/contact" novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label" for="name">Your name</label>
+                <input class="form-control" id="name" name="name" value="<%= form.name || (user ? user.full_name : '') %>" required></div>
+              <div class="col-md-6"><label class="form-label" for="email">E-mail</label>
+                <input class="form-control" type="email" id="email" name="email" value="<%= form.email || (user ? user.email : '') %>" required></div>
+              <div class="col-12"><label class="form-label" for="subject">Subject</label>
+                <input class="form-control" id="subject" name="subject" value="<%= form.subject || '' %>" required></div>
+              <div class="col-12"><label class="form-label" for="message">Message</label>
+                <textarea class="form-control" id="message" name="message" rows="5" required><%= form.message || '' %></textarea></div>
+              <div class="col-12"><button class="btn btn-navy px-4" type="submit"><i class="bi bi-send me-1"></i>Send message</button></div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="ph-card card-pad">
+          <div class="d-flex align-items-center gap-3 mb-3"><img src="/img/logo.png" alt="Sherubtse College" style="height:60px;border-radius:10px"><div><h5 class="mb-0">Print shop</h5><small class="text-muted">Sherubtse College</small></div></div>
+          <div class="contact-line"><i class="bi bi-geo-alt-fill text-primary fs-5"></i><div><strong>Location</strong><br><span class="text-muted"><%= settings.shop_location %></span></div></div>
+          <div class="contact-line"><i class="bi bi-clock-fill text-primary fs-5"></i><div><strong>Opening hours</strong><br><span class="text-muted"><%= settings.shop_hours %></span></div></div>
+          <div class="contact-line"><i class="bi bi-telephone-fill text-primary fs-5"></i><div><strong>Phone</strong><br><span class="text-muted"><%= settings.shop_phone %></span></div></div>
+          <div class="contact-line mb-0"><i class="bi bi-envelope-fill text-primary fs-5"></i><div><strong>E-mail</strong><br><span class="text-muted"><%= settings.shop_email %></span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/foot') %>

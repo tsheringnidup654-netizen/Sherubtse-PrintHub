@@ -1,0 +1,38 @@
+/* Student & admin dashboard layout (sidebar + content). Loaded only on dashboard pages. */
+.dash-shell { display: flex; min-height: calc(100vh - 68px); background: #f6f9fe; }
+.dash-side { width: 258px; flex: none; background: #fff; border-right: 1px solid var(--line); padding: 1.25rem .9rem; }
+.dash-side .side-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; padding: .75rem .8rem .35rem; }
+.dash-side .side-link { display: flex; align-items: center; gap: .75rem; padding: .62rem .85rem; margin: 2px 0; border-radius: 12px; color: var(--ink); font-weight: 600; font-size: .92rem; transition: background .15s, color .15s, transform .15s; }
+.dash-side .side-link i { font-size: 1.1rem; color: var(--navy-700); width: 22px; text-align: center; }
+.dash-side .side-link:hover { background: var(--sky-50); transform: translateX(2px); }
+.dash-side .side-link.active { background: var(--navy); color: #fff; box-shadow: 0 6px 16px rgba(11, 42, 91, .25); }
+.dash-side .side-link.active i { color: #fff; }
+.dash-side .side-link .pill { margin-left: auto; background: var(--red); color: #fff; border-radius: 999px; font-size: .68rem; padding: .1rem .45rem; font-weight: 700; }
+.dash-side .side-user { display: flex; gap: .7rem; align-items: center; padding: .8rem; border-radius: 14px; background: var(--sky-50); margin-bottom: .75rem; }
+.dash-side .side-user small { color: var(--muted); display: block; line-height: 1.2; }
+
+.dash-main { flex: 1; min-width: 0; padding: 1.75rem; }
+.dash-title { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.4rem; }
+.dash-title h2 { font-size: 1.55rem; margin: 0; }
+.dash-title p { margin: .15rem 0 0; color: var(--muted); }
+
+.stat-tile { display: flex; align-items: center; gap: .9rem; padding: 1.1rem 1.2rem; height: 100%; }
+.stat-tile .icon-tile { width: 48px; height: 48px; font-size: 1.35rem; }
+.stat-tile .num { font-size: 1.65rem; font-weight: 800; color: var(--navy); line-height: 1.1; }
+.stat-tile .lbl { color: var(--muted); font-size: .82rem; font-weight: 600; }
+.stat-tile.warn .icon-tile { background: var(--red-bg); color: var(--red); }
+.stat-tile.good .icon-tile { background: var(--green-bg); color: var(--green); }
+.stat-tile.amber .icon-tile { background: var(--yellow-bg); color: var(--yellow); }
+
+.chart-box { position: relative; height: 280px; }
+.filter-bar { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.25rem; }
+.notif-item { display: flex; gap: .85rem; padding: .95rem 1.1rem; border-bottom: 1px solid var(--line); }
+.notif-item:last-child { border-bottom: 0; }
+.notif-item.unread { background: var(--sky-50); }
+.notif-item .icon-tile { width: 42px; height: 42px; font-size: 1.15rem; }
+
+@media (max-width: 991.98px) {
+  .dash-side { width: 280px; }
+  .dash-main { padding: 1.1rem; }
+  .dash-shell { display: block; }
+}

@@ -1,0 +1,27 @@
+/* Home, About, Contact */
+.hero { background: radial-gradient(1100px 500px at 85% -10%, #cfe6ff 0, transparent 60%), linear-gradient(180deg, var(--sky-50), #fff); padding: 5rem 0 4rem; overflow: hidden; }
+.hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800; line-height: 1.08; }
+.hero h1 span { background: linear-gradient(90deg, var(--navy-700), var(--sky)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lead { color: var(--muted); max-width: 34rem; }
+.hero-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-weight: 600; font-size: .82rem; color: var(--navy); box-shadow: var(--shadow); }
+.hero-art { position: relative; min-height: 380px; }
+.hero-art .logo-card { position: absolute; inset: 20px 40px 40px 20px; background: linear-gradient(135deg, var(--navy), var(--navy-700)); border-radius: 28px; display: grid; place-items: center; box-shadow: var(--shadow-lg); animation: float 6s ease-in-out infinite; }
+.hero-art .logo-card img { width: 62%; border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+.float-chip { position: absolute; background: #fff; border-radius: 16px; padding: .7rem 1rem; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: .85rem; color: var(--navy); animation: float 5s ease-in-out infinite; }
+.float-chip i { font-size: 1.3rem; color: var(--sky); }
+.float-chip.c1 { top: 0; right: 0; animation-delay: -1s; }
+.float-chip.c2 { bottom: 50px; left: -10px; animation-delay: -2.5s; }
+.float-chip.c3 { bottom: 0; right: 30px; animation-delay: -4s; }
+@keyframes float { 50% { transform: translateY(-12px); } }
+
+.section { padding: 4.2rem 0; }
+.section-head { text-align: center; max-width: 40rem; margin: 0 auto 2.5rem; }
+.section-head .eyebrow { color: var(--sky); font-weight: 700; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; }
+.step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: #fff; font-weight: 800; display: grid; place-items: center; margin-bottom: 1rem; }
+.feature-ico { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--sky-100), #fff); border: 1px solid var(--line); display: grid; place-items: center; font-size: 1.6rem; color: var(--navy-700); margin-bottom: 1rem; }
+.stat-band { background: var(--navy); color: #fff; border-radius: 24px; padding: 2.2rem 1rem; }
+.stat-band .n { font-size: 2.2rem; font-weight: 800; }
+.stat-band small { color: #b9ccf0; }
+.cta-band { background: linear-gradient(135deg, var(--navy), var(--navy-700)); border-radius: 28px; color: #fff; padding: 3rem 1.5rem; text-align: center; }
+.cta-band h2 { color: #fff; }
+.contact-line { display: flex; gap: .9rem; align-items: flex-start; margin-bottom: 1.1rem; }
