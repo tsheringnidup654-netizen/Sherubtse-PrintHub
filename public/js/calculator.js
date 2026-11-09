@@ -68,5 +68,10 @@
     }
     schedule();
   });
+  const selectedDocument = form.elements.document_id;
+  if (selectedDocument && !form.elements.edit_id) {
+    const pages = selectedDocument.selectedOptions[0] && selectedDocument.selectedOptions[0].dataset.pages;
+    if (pages) form.elements.pages.value = pages;
+  }
   update();
 })();

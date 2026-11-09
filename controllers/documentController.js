@@ -3,16 +3,21 @@ const fs = require('fs');
 const path = require('path');
 const Document = require('../models/Document');
 const C = require('../config/constants');
-const { signatureMatches, countPdfPages } = require('../utils/fileCheck');
+const { signatureMatches } = require('../utils/fileCheck');
 const { toInt, decodeUploadFilename } = require('../utils/helpers');
-const { readWordDocumentProperties, readPowerPointDocumentProperties } = require('../utils/wordPageCount');
+const { countDocumentPages, refreshSinglePageDocuments } = require('../utils/documentPageCount');
 
 const diskPath = (doc) => path.join(C.DOC_DIR, String(doc.user_id), doc.stored_name);
 
 exports.library = async (req, res) => {
+  const documents = await refreshSinglePageDocuments(
+    await Document.listByUser(req.user.id),
+    req.user.id,
+    Document.setPages
+  );
   res.render('student/documents', {
     title: 'Upload document', section: 'documents', pageCss: ['customize'], pageJs: ['upload'],
-    documents: await Document.listByUser(req.user.id), maxMb: Math.round(C.MAX_UPLOAD_BYTES / 1048576),
+    documents, maxMb: Math.round(C.MAX_UPLOAD_BYTES / 1048576),
   });
 };
 
@@ -30,14 +35,8 @@ exports.upload = async (req, res) => {
   if (!signatureMatches(req.file.path, ext)) return fail('The file content does not match its type. Upload a genuine PDF, Word or PowerPoint file.');
 
   const rawPageCount = String(req.body.page_count || '').trim();
-  let pages = rawPageCount ? toInt(rawPageCount) : null;
-  if (!pages && ext === '.pdf') pages = await countPdfPages(req.file.path);
-  if (!pages && (ext === '.doc' || ext === '.docx')) {
-    pages = readWordDocumentProperties(req.file.path);
-  }
-  if (!pages && (ext === '.ppt' || ext === '.pptx')) {
-    pages = readPowerPointDocumentProperties(req.file.path);
-  }
+  const manualPages = rawPageCount ? toInt(rawPageCount) : null;
+  const pages = await countDocumentPages(req.file.path, ext) || manualPages;
   if (rawPageCount && (!/^\d+$/.test(rawPageCount) || !pages || pages > 5000)) {
     return fail('Page count must be a whole number between 1 and 5000.');
   }
@@ -67,12 +66,14 @@ exports.setPages = async (req, res) => {
 };
 
 exports.remove = async (req, res) => {
-  const doc = await Document.findOwned(toInt(req.params.id), req.user.id);
-  if (!doc) { req.flash('danger', 'Document not found.'); return res.redirect('/student/documents'); }
-  if (await Document.inUse(doc.id)) { req.flash('warning', 'This document is in your cart or in an active order, so it cannot be deleted yet.'); return res.redirect('/student/documents'); }
-  await Document.remove(doc.id);
-  fs.unlink(diskPath(doc), () => {});
-  req.flash('success', 'Document deleted.');
+  const result = await Document.removeOwned(toInt(req.params.id), req.user.id);
+  if (result.status === 'not_found') { req.flash('danger', 'Document not found.'); return res.redirect('/student/documents'); }
+  if (result.status === 'in_use') { req.flash('warning', 'This document is attached to an active order and cannot be deleted until the order is complete.'); return res.redirect('/student/documents'); }
+  const file = path.join(C.DOC_DIR, String(req.user.id), result.stored_name);
+  fs.unlink(file, (err) => {
+    if (err && err.code !== 'ENOENT') console.error('Could not remove uploaded document file:', err.message);
+  });
+  req.flash('success', 'Document deleted. Any cart items using it were removed too.');
   res.redirect('/student/documents');
 };
 

@@ -7,8 +7,13 @@ const { PDFDocument } = require('pdf-lib');
 const { countPdfPages } = require('../utils/fileCheck');
 const { readWordDocumentProperties, readPowerPointDocumentProperties } = require('../utils/wordPageCount');
 
-function makeDocx(pages) {
-  return makeZip([['docProps/app.xml', `<Properties><Pages>${pages}</Pages></Properties>`]]);
+function makeDocx(metadataPages, renderedBreaks = 0, explicitBreaks = 0) {
+  const breaks = '<w:lastRenderedPageBreak/>'.repeat(renderedBreaks);
+  const pageBreaks = '<w:br w:type="page"/>'.repeat(explicitBreaks);
+  return makeZip([
+    ['docProps/app.xml', `<Properties><Pages>${metadataPages}</Pages></Properties>`],
+    ['word/document.xml', `<w:document>${breaks}${pageBreaks}</w:document>`],
+  ]);
 }
 
 function makePptx(slides) {
@@ -110,7 +115,8 @@ async function run() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'printhub-page-count-'));
   try {
   const samples = [
-    ['docx', makeDocx(7), readWordDocumentProperties, 7],
+    ['docx', makeDocx(1, 2), readWordDocumentProperties, 3],
+    ['docx-page-breaks', makeDocx(1, 0, 3), readWordDocumentProperties, 4],
     ['doc', makeOleDocument(5, '\u0005SummaryInformation', 14), readWordDocumentProperties, 5],
     ['pptx', makePptx(4), readPowerPointDocumentProperties, 4],
     ['ppt', makeOleDocument(6, '\u0005DocumentSummaryInformation', 7), readPowerPointDocumentProperties, 6],

@@ -6,6 +6,7 @@ const END_OF_CHAIN = 0xfffffffe;
 const FAT_SECTOR = 0xfffffffd;
 const DIFAT_SECTOR = 0xfffffffc;
 const MAX_APP_PROPERTIES_BYTES = 64 * 1024;
+const MAX_WORD_DOCUMENT_XML_BYTES = 12 * 1024 * 1024;
 
 function readWordDocumentProperties(filePath) {
   const file = fs.readFileSync(filePath);
@@ -89,16 +90,51 @@ function readZipEntry(file, entry) {
   return data.length === entry.uncompressedSize ? data : null;
 }
 
+function readWordDocumentXml(file, entry) {
+  if (!entry || entry.flags & 1 || (entry.method !== 0 && entry.method !== 8)) return null;
+  if (entry.uncompressedSize > MAX_WORD_DOCUMENT_XML_BYTES || entry.compressedSize > file.length) return null;
+  if (entry.localOffset + 30 > file.length || file.readUInt32LE(entry.localOffset) !== 0x04034b50) return null;
+  const localNameLength = file.readUInt16LE(entry.localOffset + 26);
+  const localExtraLength = file.readUInt16LE(entry.localOffset + 28);
+  const dataOffset = entry.localOffset + 30 + localNameLength + localExtraLength;
+  if (dataOffset + entry.compressedSize > file.length) return null;
+  const compressed = file.subarray(dataOffset, dataOffset + entry.compressedSize);
+  let data;
+  try {
+    data = entry.method === 0
+      ? compressed
+      : zlib.inflateRawSync(compressed, { maxOutputLength: MAX_WORD_DOCUMENT_XML_BYTES });
+  } catch (err) {
+    if (err.code === 'ERR_BUFFER_TOO_LARGE' || err.code === 'Z_DATA_ERROR') return null;
+    throw err;
+  }
+  return data.length === entry.uncompressedSize ? data : null;
+}
+
 function readDocxProperties(file) {
   const entries = readZipDirectory(file);
   if (!entries) return null;
+  const documentXml = readWordDocumentXml(
+    file,
+    entries.find((entry) => entry.name === 'word/document.xml')
+  );
+  let renderedPageCount = null;
+  if (documentXml) {
+    const body = documentXml.toString('utf8');
+    const renderedBreaks = (body.match(/<(?:[\w.-]+:)?lastRenderedPageBreak\b[^>]*\/?>/g) || []).length;
+    const explicitBreaks = (body.match(/<(?:[\w.-]+:)?br\b(?=[^>]*\btype=["']page["'])[^>]*\/?>/g) || []).length;
+    const breaks = Math.max(renderedBreaks, explicitBreaks);
+    if (breaks > 0 && breaks < 5000) renderedPageCount = breaks + 1;
+  }
   const app = entries.find((entry) => entry.name === 'docProps/app.xml');
   const xml = readZipEntry(file, app);
-  if (!xml) return null;
-  const match = xml.toString('utf8').match(/<(?:[\w.-]+:)?Pages>\s*(\d+)\s*<\/(?:[\w.-]+:)?Pages>/);
-  if (!match) return null;
-  const pages = Number(match[1]);
-  return Number.isInteger(pages) && pages > 0 && pages <= 5000 ? pages : null;
+  const match = xml && xml.toString('utf8').match(/<(?:[\w.-]+:)?Pages>\s*(\d+)\s*<\/(?:[\w.-]+:)?Pages>/);
+  const metadataPages = match ? Number(match[1]) : null;
+  const validMetadata = Number.isInteger(metadataPages) && metadataPages > 0 && metadataPages <= 5000
+    ? metadataPages
+    : null;
+  if (renderedPageCount && validMetadata) return Math.max(renderedPageCount, validMetadata);
+  return renderedPageCount || validMetadata;
 }
 
 function readPptxSlideCount(file) {

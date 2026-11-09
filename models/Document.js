@@ -68,30 +68,35 @@ const setPages = (id, userId, pages) =>
     [id, userId, pages]
   );
 
-const remove = (id) =>
-  db.query('DELETE FROM documents WHERE id = $1', [id]);
+async function removeOwned(id, userId) {
+  return db.tx(async (client) => {
+    const { rows } = await client.query(
+      'SELECT stored_name FROM documents WHERE id = $1 AND user_id = $2 FOR UPDATE',
+      [id, userId]
+    );
+    if (!rows[0]) return { status: 'not_found' };
 
-/** A document is in use while it is in a cart or live order. */
-async function inUse(id) {
-  const { rows } = await db.query(
-    `SELECT (
-       EXISTS (
-         SELECT 1
-           FROM cart_items
-          WHERE document_id = $1
-       )
-       OR EXISTS (
-         SELECT 1
-           FROM order_items oi
-           JOIN orders o ON o.id = oi.order_id
-          WHERE oi.document_id = $1
-            AND o.status IN ('pending','accepted','printing','ready')
-       )
-     ) AS used`,
-    [id]
-  );
+    const activeOrder = await client.query(
+      `SELECT 1
+         FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+        WHERE oi.document_id = $1
+          AND o.status IN ('pending','accepted','printing','ready')
+        LIMIT 1`,
+      [id]
+    );
+    if (activeOrder.rowCount) return { status: 'in_use' };
 
-  return rows[0].used;
+    await client.query(
+      'DELETE FROM cart_items WHERE document_id = $1 AND user_id = $2',
+      [id, userId]
+    );
+    await client.query(
+      'DELETE FROM documents WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+    return { status: 'deleted', stored_name: rows[0].stored_name };
+  });
 }
 
 /** Admin view of all uploads and the orders that use them. */
@@ -133,7 +138,6 @@ module.exports = {
   findOwned,
   findById,
   setPages,
-  remove,
-  inUse,
+  removeOwned,
   listAll,
 };

@@ -13,16 +13,6 @@
   const fmtSize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
   const fail = (msg) => window.PrintHub.toast('danger', msg);
 
-  function guessPdfPages(file) {
-    if (file.size > 15 * 1048576) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const counts = [...String(r.result).matchAll(/\/Count\s+(\d+)/g)].map((m) => Number(m[1]));
-      if (counts.length && !$('page-count').value) $('page-count').value = Math.max(...counts);
-    };
-    r.readAsBinaryString(file);
-  }
-
   function choose(file) {
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
@@ -42,7 +32,6 @@
     if (ext === 'pdf') {
       frame.src = URL.createObjectURL(file);
       frame.hidden = false; $('no-preview').hidden = true;
-      guessPdfPages(file);
     } else { frame.hidden = true; frame.removeAttribute('src'); $('no-preview').hidden = false; }
   }
 

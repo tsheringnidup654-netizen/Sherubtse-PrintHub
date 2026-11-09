@@ -13,6 +13,7 @@ const { parseItemOptions, clean, toInt } = require('../utils/helpers');
 const { estimateProcessing } = require('../utils/estimate');
 const { fromBhutanLocal, toInputParts, fmtFull } = require('../utils/time');
 const { buildInvoice } = require('../utils/invoice');
+const { refreshSinglePageDocuments } = require('../utils/documentPageCount');
 
 const baseUrl = (req) => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
@@ -26,12 +27,15 @@ function priceLines(rows, ctx) {
 
 /* ---------------------------------------------------------- customise */
 exports.customize = async (req, res) => {
-  const [services, documents] = await Promise.all([Service.listActive(), Document.listByUser(req.user.id)]);
+  const [services, userDocuments] = await Promise.all([Service.listActive(), Document.listByUser(req.user.id)]);
+  const documents = await refreshSinglePageDocuments(userDocuments, req.user.id, Document.setPages);
   const editing = req.query.edit ? await Cart.find(req.user.id, toInt(req.query.edit)) : null;
   let service = null;
   if (editing) service = services.find((s) => s.id === editing.service_id);
   else if (req.query.service) service = services.find((s) => s.slug === req.query.service);
-  const item = editing || { pages: 1, copies: 1, paper_size: 'A4', colour_mode: 'bw', sided: 'single', orientation: 'portrait', quality: 'normal', binding: 'none', document_id: toInt(req.query.document) };
+  const documentId = toInt(req.query.document);
+  const selectedDocument = documents.find((document) => document.id === documentId);
+  const item = editing || { pages: selectedDocument && selectedDocument.page_count || 1, copies: 1, paper_size: 'A4', colour_mode: 'bw', sided: 'single', orientation: 'portrait', quality: 'normal', binding: 'none', document_id: documentId };
   res.render('student/customize', {
     title: 'Printing customization', section: 'customize', pageCss: ['customize'], pageJs: ['calculator'],
     services, documents, service: service || services[0], item, editing,
