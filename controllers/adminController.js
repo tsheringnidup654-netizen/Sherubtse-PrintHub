@@ -124,7 +124,12 @@ exports.updateStatus = async (req, res) => {
   if (!order) return;
   const status = req.body.status;
   const note = clean(req.body.note, 300);
-  const back = `/admin/orders/${order.id}`;
+  const fromDashboard = req.body.return_to === '/admin/dashboard';
+  const back = fromDashboard ? '/admin/dashboard' : `/admin/orders/${order.id}`;
+  if (fromDashboard && !['accepted', 'rejected'].includes(status)) {
+    req.flash('danger', 'The dashboard supports accepting or rejecting pending orders.');
+    return res.redirect(back);
+  }
   if (!C.TRANSITIONS[order.status].includes(status)) { req.flash('danger', `An order that is "${C.STATUS_LABELS[order.status]}" cannot move to "${C.STATUS_LABELS[status] || status}".`); return res.redirect(back); }
   if (status === 'rejected' && note.length < 3) { req.flash('danger', 'Please give the student a reason for rejecting the order.'); return res.redirect(back); }
   await Order.setStatus(order, status, req.user.id, note);
