@@ -2,7 +2,7 @@
   Shared option controls for the customise page and the public calculator.
   Expects: item (current values) and service (selected service row).
 %>
-<% const isPrint = service.pricing_type === 'print'; const canColour = service.colour_price != null; %>
+<% const isPrint = service.pricing_type === 'print'; const canColour = isPrint; %>
 <div class="row g-3">
   <div class="col-6">
     <label class="form-label" for="pages">Number of pages <% if (service.pricing_type === 'per_set') { %><span class="text-muted fw-normal">(optional)</span><% } %></label>

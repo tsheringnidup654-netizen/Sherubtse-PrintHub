@@ -62,9 +62,14 @@ exports.price = async (req, res) => {
   const calc = calculateItem(service, value, { settings, services });
   const urgent = urgentFee(calc.total, settings);
   const est = estimateProcessing(queue, value.pages * value.copies, settings.pages_per_hour);
+  const colourService = services.find((s) => s.slug === 'colour-printing');
   res.json({
     ok: true, ...calc, urgentFee: urgent, urgentPct: Number(settings.urgent_surcharge_pct),
     estimate: { label: est.label, workload: est.workload },
-    supports: { colour: service.colour_price != null, print: service.pricing_type === 'print' },
+    supports: {
+      colour: service.pricing_type === 'print'
+        && (service.colour_price != null || !!(colourService && (colourService.colour_price != null || colourService.base_price != null))),
+      print: service.pricing_type === 'print',
+    },
   });
 };

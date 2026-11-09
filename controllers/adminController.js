@@ -28,7 +28,7 @@ exports.dashboard = async (req, res) => {
 };
 
 exports.dashboardStats = async (req, res) => {
-  res.json(await Stats.adminDashboard());
+  res.set('Cache-Control', 'no-store').json(await Stats.adminDashboard());
 };
 
 /* ------------------------------------------------------------- students */

@@ -46,7 +46,6 @@ function parseItemOptions(body, service) {
   };
   if (service) {
     // Options a service does not support are forced to their defaults.
-    if (service.colour_price == null) value.colour_mode = 'bw';
     if (service.pricing_type !== 'print') { value.binding = 'none'; value.sided = 'single'; value.quality = 'normal'; value.colour_mode = 'bw'; }
     if (service.pricing_type === 'per_set') value.pages = value.pages || 1;
   }

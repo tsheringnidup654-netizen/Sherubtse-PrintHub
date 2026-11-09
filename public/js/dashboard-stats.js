@@ -43,8 +43,10 @@
     });
   }
 
+  let refreshing = false;
   async function refresh() {
-    if (document.hidden) return;
+    if (document.hidden || refreshing) return;
+    refreshing = true;
     try {
       const response = await fetch(root.dataset.dashboardStatsUrl, {
         headers: { Accept: 'application/json' },
@@ -57,9 +59,13 @@
     } catch (error) {
       showStatus('Live update failed; showing the last loaded data.', true);
       console.error(error);
+    } finally {
+      refreshing = false;
     }
   }
 
   refresh();
-  window.setInterval(refresh, 15000);
+  window.setInterval(refresh, 5000);
+  document.addEventListener('visibilitychange', refresh);
+  window.addEventListener('focus', refresh);
 })();

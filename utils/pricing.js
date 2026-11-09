@@ -33,8 +33,17 @@ function calculateItem(service, item, ctx) {
     return { total: round2(total), unit: round2(unit), pages, copies, bindingCost: 0, lines };
   }
 
-  const colour = type === 'print' && item.colour_mode === 'colour' && service.colour_price != null;
-  if (colour) unit = Number(service.colour_price);
+  const colour = type === 'print' && item.colour_mode === 'colour';
+  if (colour) {
+    const colourService = (ctx.services || []).find((x) => x.slug === 'colour-printing');
+    const colourPrice = service.colour_price != null
+      ? service.colour_price
+      : colourService && (colourService.colour_price ?? colourService.base_price);
+    if (colourPrice == null || !Number.isFinite(Number(colourPrice))) {
+      throw new Error('Colour printing is not configured.');
+    }
+    unit = Number(colourPrice);
+  }
   lines.push(`${colour ? 'Colour' : 'Standard'} rate ${nu(unit)} per page`);
 
   if (item.paper_size === 'A3') { unit *= Number(s.a3_multiplier); lines.push(`A3 paper × ${Number(s.a3_multiplier)}`); }
