@@ -11,6 +11,7 @@ router.get('/notifications', shared.notifications);
 router.post('/notifications/read-all', shared.readAll);
 router.post('/notifications/:id/read', shared.readNotification);
 router.get('/api/unread', shared.unreadCount);
+router.get('/api/dashboard-stats', admin.dashboardStats);
 
 router.get('/students', admin.students);
 router.post('/students/:id/toggle', admin.toggleStudent);

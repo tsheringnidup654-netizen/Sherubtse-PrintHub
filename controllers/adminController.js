@@ -24,7 +24,11 @@ exports.dashboard = async (req, res) => {
     Order.listAll({ deadline: 'urgent' }, 'deadline'),
     Order.listAll({}, 'newest'),
   ]);
-  render(res, 'dashboard', 'Admin dashboard', 'dashboard', { pageJs: ['charts'], stats, urgent: urgent.slice(0, 5), recent: recent.slice(0, 6) });
+  render(res, 'dashboard', 'Admin dashboard', 'dashboard', { pageJs: ['charts', 'dashboard-stats'], stats, urgent: urgent.slice(0, 5), recent: recent.slice(0, 6) });
+};
+
+exports.dashboardStats = async (req, res) => {
+  res.json(await Stats.adminDashboard());
 };
 
 /* ------------------------------------------------------------- students */

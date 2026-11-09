@@ -1,31 +1,31 @@
 <%- include('../partials/head') %>
 <% const c = stats.counts; %>
-<div class="dash-title"><div><h2>Admin dashboard</h2><p>Live overview of the print shop.</p></div>
+<div class="dash-title" data-dashboard-stats-url="/admin/api/dashboard-stats"><div><h2>Admin dashboard</h2><p>Live overview of the print shop.</p><span class="small text-muted" data-dashboard-updated>Updating automatically...</span></div>
   <div class="d-flex gap-2 flex-wrap"><a href="/admin/collect" class="btn btn-navy"><i class="bi bi-qr-code-scan me-1"></i>Collect order</a><a href="/admin/deadlines" class="btn btn-outline-navy"><i class="bi bi-alarm me-1"></i>Deadlines</a></div></div>
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-people"></i></div><div><div class="num"><%= c.students %></div><div class="lbl">Registered students</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-bag"></i></div><div><div class="num"><%= c.orders %></div><div class="lbl">Total orders</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-hourglass-split"></i></div><div><div class="num"><%= c.pending %></div><div class="lbl">Pending orders</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-printer"></i></div><div><div class="num"><%= c.printing %></div><div class="lbl">Printing now</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-box-seam"></i></div><div><div class="num"><%= c.ready %></div><div class="lbl">Ready for collection</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-bag-check"></i></div><div><div class="num"><%= c.completed %></div><div class="lbl">Completed orders</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile warn"><div class="icon-tile"><i class="bi bi-exclamation-triangle"></i></div><div><div class="num"><%= c.urgent %></div><div class="lbl">Due within 3 hours</div></div></div></div>
-  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-cash-coin"></i></div><div><div class="num"><%= money(stats.sales) %></div><div class="lbl">Total sales (paid)</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-people"></i></div><div><div class="num" data-dashboard-stat="students"><%= c.students %></div><div class="lbl">Registered students</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-bag"></i></div><div><div class="num" data-dashboard-stat="orders"><%= c.orders %></div><div class="lbl">Total orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-hourglass-split"></i></div><div><div class="num" data-dashboard-stat="pending"><%= c.pending %></div><div class="lbl">Pending orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile"><div class="icon-tile"><i class="bi bi-printer"></i></div><div><div class="num" data-dashboard-stat="printing"><%= c.printing %></div><div class="lbl">Printing now</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-box-seam"></i></div><div><div class="num" data-dashboard-stat="ready"><%= c.ready %></div><div class="lbl">Ready for collection</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile good"><div class="icon-tile"><i class="bi bi-bag-check"></i></div><div><div class="num" data-dashboard-stat="completed"><%= c.completed %></div><div class="lbl">Completed orders</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile warn"><div class="icon-tile"><i class="bi bi-exclamation-triangle"></i></div><div><div class="num" data-dashboard-stat="urgent"><%= c.urgent %></div><div class="lbl">Due within 3 hours</div></div></div></div>
+  <div class="col-6 col-lg-4 col-xl-3"><div class="ph-card stat-tile amber"><div class="icon-tile"><i class="bi bi-cash-coin"></i></div><div><div class="num" data-dashboard-stat="sales"><%= money(stats.sales) %></div><div class="lbl">Total sales (paid)</div></div></div></div>
 </div>
 
 <div class="row g-4 mb-4">
   <div class="col-xl-8">
     <div class="ph-card"><div class="card-title-bar"><h6>Daily revenue (last 14 days)</h6></div><div class="card-pad"><div class="chart-box">
-      <canvas role="img" aria-label="Daily revenue chart" data-chart='<%= JSON.stringify({ type: "line", labels: stats.daily.map(function (d) { return d.label; }), values: stats.daily.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
+      <canvas role="img" aria-label="Daily revenue chart" data-dashboard-chart="daily" data-chart='<%= JSON.stringify({ type: "line", labels: stats.daily.map(function (d) { return d.label; }), values: stats.daily.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
   </div>
   <div class="col-xl-4">
     <div class="ph-card"><div class="card-title-bar"><h6>Most popular services</h6></div><div class="card-pad"><div class="chart-box">
-      <canvas role="img" aria-label="Popular services chart" data-chart='<%= JSON.stringify({ type: "doughnut", labels: stats.popular.map(function (d) { return d.label; }), values: stats.popular.map(function (d) { return d.value; }), label: "Orders" }) %>'></canvas></div></div></div>
+      <canvas role="img" aria-label="Popular services chart" data-dashboard-chart="popular" data-chart='<%= JSON.stringify({ type: "doughnut", labels: stats.popular.map(function (d) { return d.label; }), values: stats.popular.map(function (d) { return d.value; }), label: "Orders" }) %>'></canvas></div></div></div>
   </div>
   <div class="col-12">
     <div class="ph-card"><div class="card-title-bar"><h6>Monthly revenue (last 6 months)</h6></div><div class="card-pad"><div class="chart-box" style="height:240px">
-      <canvas role="img" aria-label="Monthly revenue chart" data-chart='<%= JSON.stringify({ type: "bar", labels: stats.monthly.map(function (d) { return d.label; }), values: stats.monthly.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
+      <canvas role="img" aria-label="Monthly revenue chart" data-dashboard-chart="monthly" data-chart='<%= JSON.stringify({ type: "bar", labels: stats.monthly.map(function (d) { return d.label; }), values: stats.monthly.map(function (d) { return d.value; }), label: "Revenue (Nu)", money: true }) %>'></canvas></div></div></div>
   </div>
 </div>
 
